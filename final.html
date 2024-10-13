@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://d3js.org/d3.v6.js"></script>
+    <link rel="stylesheet" href="final.css">
+    <link rel="stylesheet" href="drag.css">
+</head>
+
+<body>
+    <div class="top-container">
+        <div class="box2">
+            <div class="button-title">
+                <label style="font-weight: bold;">照片切換</label>
+            </div>
+            <div class="btn-container">
+                <div class="btn">
+                    <button id="environment" class="color-button active-color">環境</button>
+                    <button id="food" class="color-button">食物</button>
+                    <button id="hide">隱藏外圈</button>
+                </div>
+            </div>
+        </div>
+        <div class="jump-buttons">
+            <div class="jump-button" onclick="jumpToDiningTime(60)">60 分鐘</div>
+            <div class="jump-button" onclick="jumpToDiningTime(90)">90 分鐘</div>
+            <div class="jump-button" onclick="jumpToDiningTime(100)">100 分鐘</div>
+            <div class="jump-button" onclick="jumpToDiningTime(120)">120 分鐘</div>
+            <div class="jump-button" onclick="jumpToDiningTime(150)">150 分鐘</div>
+            <div class="jump-button" onclick="jumpToDiningTime('all')">所有時間</div>
+        </div>
+        <div class="control-buttons">
+            <button id="sort-button">按評分排序</button>
+        </div>
+        <div class="minimap-container">
+            <svg id="minimap" width="200" height="100"></svg>
+        </div>
+    </div>
+    <div class="x-axis-container">
+        <svg id="x-axis-svg" width="1200" height="50"></svg>
+    </div>
+    <div id="chart"></div>
+    <div class="box4" id="box4">
+        <div class="box4-header">拖移餐廳看更多餐廳資訊 已選0間餐廳</div>
+        <div id="popup-content">
+            <button id="left-arrow">←</button>
+            <div class="btn">
+                <button id="clear-btn" style="background-color: #ddd;">清除全部</button>
+            </div>
+            <!-- show the detailed info of restaurants -->
+            <div id="restaurant-info-wrapper">
+                <div id="restaurant-info">
+                    <p id="defaultText">尚未加入任何餐廳</p>
+                </div>
+            </div>
+            <div class="btn">
+                <button id="compare-btn">去比較(0/3)</button>
+            </div>
+            <button id="right-arrow">→</button>
+        </div>
+    </div>
+    <div id="tooltip"
+        style="display:none; position:absolute; border:1px solid #ccc; background-color:#fff; padding:10px; border-radius:8px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);">
+        <div id="tooltip-content" style="display: flex; align-items: center;">
+            <div id="carousel"
+                style="position: relative; width: 150px; height: 150px; overflow: hidden; border-radius: 8px; margin-right: 10px;">
+                <div id="carousel-images" style="display: flex; transition: transform 0.5s ease;">
+                    <!-- 圖片動態插入 -->
+                </div>
+            </div>
+            <div id="tooltip-details" style="flex-grow: 1;">
+                <div id="tooltip-title" style="font-weight: bold;"></div>
+                <div id="tooltip-rating" style="color: rgba(196, 127, 0, 0.716); font-weight: bold;"></div>
+                <div id="tooltip-food-dishes" style="margin-top: 10px;"></div>
+                <div id="tooltip-ratings"></div>
+            </div>
+        </div>
+    </div>
+    <div class="arrow arrow-left"></div>
+    <div class="arrow arrow-right"></div>
+
+    <!-- Function -->
+    <!-- 跳轉功能 -->
+    <script src="jumpToDiningTime.js"></script>
+    <!-- <script src="updateIntervals.js"></script> -->
+    <!-- <script src="drawchart.js"></script> -->
+    <!-- 定義用函數 -->
+    <script src="define.js"></script>
+    <!-- 氣氛篩選函數 -->
+    <!-- <script src="filterVibe.js"></script> -->
+    <!-- minimap -->
+    <script src="minimap.js"></script>
+    <!-- <script src="test.js"></script> -->
+    <script src="rating.js"></script>
+    <script src="drag.js"></script>
+    <script src="hide.js"></script>
+    <script src="change_photo.js"></script>
+
+    <script>
+        let loaded = [];
+        let positions = [];
+        let totalHeight = [];
+        let filteredPositions;
+        let filteredIds;
+        let filteredPositions2 = [];
+
+        d3.json('./data.php?').then(function (data) {
+            console.log('Loaded data:', data);  // 查看加载的数据
+            loaded = data;
+            newPositions2 = data;
+            const width = window.innerWidth;
+            const height = 800;
+            const margin = { top: 20, right: 50, bottom: 50, left: 40 };
+            const innerRadius = 45;
+            const rectWidth = 120;
+            const rectHeight = 60;
+            const rectSpacing = 20;
+            const rowHeight = rectHeight + rectSpacing;
+            const groupSpacing = 30;
+            const circleRadius = 60;
+            const intervalWidths = {};
+            let leftData = [
+                { vibe: 'default1', colorClass: '#d3d3d3' },
+                { vibe: 'default2', colorClass: '#d3d3d3' },
+                { vibe: 'default3', colorClass: '#d3d3d3' },
+                { vibe: 'default4', colorClass: '#d3d3d3' },
+                { vibe: 'default5', colorClass: '#d3d3d3' }
+            ];
+
+            const intervals = ["區間0", "區間200", "區間400", "區間600", "區間800", "區間1000"];//價錢區間
+            let currentIntervals = ["區間200", "區間400", "區間600"];//預設區間
+            const intervalTotals = getCurrentIntervalTotals(currentIntervals, circleRadius, data, width, margin, intervalWidths);//獲得該曲間總餐廳數(FOR WIDTH計算)
+            const total = d3.sum(Object.values(intervalTotals));
+
+            if (isNaN(total) || total === 0) {
+                console.warn("Total 餐厅数为 NaN 或 0，跳过更新。");
+                return;
+            }
+
+            //計算區間寬度
+            currentIntervals.forEach(interval => {
+                intervalWidths[interval] = (intervalTotals[interval] / total) * (width - margin.left - margin.right);
+            });
+
+            if (isNaN(total) || total === 0) {
+                console.warn("Total 餐厅数为 NaN 或 0，跳过更新。");
+                return;
+            }
+
+            currentIntervals.forEach(interval => {
+                const intervalTotal = intervalTotals[interval];
+                if (intervalTotal && total) {
+                    intervalWidths[interval] = (intervalTotal / total) * (width - margin.left - margin.right);
+                } else {
+                    intervalWidths[interval] = circleRadius * 2; // 確保每個區間至少有一個圓圈的寬度
+                }
+            });
+
+            const intervalPositions = {};
+            let currentPosition = margin.left;
+            currentIntervals.forEach(interval => {
+                intervalPositions[interval] = currentPosition;
+                currentPosition += intervalWidths[interval];
+            });
+
+            const sortedTimes = ['60', '90', '100', '120', '150', ''];
+            const color = d3.scaleOrdinal()
+                .domain(sortedTimes)
+                .range(['#d6af99', '#a2cdab', '#7ea1dd', '#fdc85e', '#e67575', '#b295ab']);
+
+            const x = d3.scaleBand()
+                .domain(intervals)
+                .range([margin.left, width - margin.right])
+                .padding(0.1);
+
+            const y = d3.scaleBand()
+                .domain(sortedTimes)
+                .range([margin.top, height - margin.bottom])
+                .padding(0.1);
+
+
+            document.getElementById('sort-button').addEventListener('click', function () {
+                // 將資料rating重新按照高到低排
+
+                console.log("Data sorted by rating:", data);
+
+                // 然后更新此區間
+                updateIntervals();
+
+                console.log("Intervals updated, starting to filter and display current interval circles...");
+
+                // 清空當前顯示
+                d3.select("#chart").selectAll("*").remove();
+
+                // 重新安排圓圈位置
+                const newPositions = calculateSortedPositions(data, intervalWidths, rowHeight, rectSpacing, margin, intervalPositions, circleRadius, sortedTimes, currentIntervals, groupSpacing);
+
+                console.log("Sorted positions for the current interval:", newPositions);
+
+
+                // 計算svg總高度
+                const totalHeightValue = calculateTotalHeight(data, intervalWidths, rowHeight, groupSpacing, margin, sortedTimes, currentIntervals, circleRadius, rectSpacing);
+                if (isNaN(totalHeightValue) || totalHeightValue <= 0 || !isFinite(totalHeightValue)) {
+                    console.error("Total height 计算失败，跳过绘图。");
+                    return;
+                }
+
+                drawChart(intervalWidths, intervalPositions, total, totalHeightValue, newPositions);
+
+                console.log("Chart updated successfully after sorting by rating.");
+            });
+
+            let selectedRestaurantIds = [];  // 用于存储接收到的餐厅ID
+            let selectedVibesWithColors = [];  // 用于存储接收到的氛围按钮数据
+
+            // 监听来自 filter.html 的消息
+            window.addEventListener('message', function (event) {
+                if (event.data.type === 'vibesWithColors') {
+                    // 更新氛围按钮的选择
+                    selectedVibesWithColors = event.data.data;
+                    console.log('Received selectedVibesWithColors:', selectedVibesWithColors);
+                } else {
+                    // 更新餐厅ID的选择
+                    const receivedRestaurantData = event.data;
+                    selectedRestaurantIds = [];  // 先清空之前的餐厅ID
+                    for (let i = 0; i < receivedRestaurantData.length; i++) {
+                        if (!isNaN(receivedRestaurantData[i])) {
+                            // 如果是数字，添加到 r_id 列表中
+                            selectedRestaurantIds.push(Number(receivedRestaurantData[i]));
+                        }
+                    }
+                    console.log('Received Restaurant IDs:', selectedRestaurantIds);
+                }
+
+                // 调用筛选和更新图表的函数
+                filterAndUpdateChart();
+            }, false);
+
+            // 筛选和更新图表的函数
+            function filterAndUpdateChart() {
+                // 确保 selectedVibesWithColors 至少有默认值
+                const defaultVibes = [
+                    { vibe: 'default1', colorClass: '#d3d3d3' },
+                    { vibe: 'default2', colorClass: '#d3d3d3' },
+                    { vibe: 'default3', colorClass: '#d3d3d3' },
+                    { vibe: 'default4', colorClass: '#d3d3d3' },
+                    { vibe: 'default5', colorClass: '#d3d3d3' }
+                ];
+
+                const effectiveVibes = selectedVibesWithColors.length > 0 ? selectedVibesWithColors : defaultVibes;
+
+                // 根据最新的筛选条件进行过滤
+                const filteredPositions2 = loaded.filter(d => {
+                    const matchesVibe = effectiveVibes.length > 0 ?
+                        effectiveVibes.some(vibe => d.r_atmosphere && d.r_atmosphere.includes(vibe.vibe)) : true;
+
+                    const matchesId = selectedRestaurantIds.length > 0 ?
+                        selectedRestaurantIds.includes(Number(d.r_id)) : true;
+
+                    // 使用 OR 逻辑，这样只有一个条件匹配时也会保留项
+                    return matchesVibe || matchesId;
+                });
+
+                // 在此处将接收到的氛围数据赋值给 leftData
+                leftData = effectiveVibes;
+
+                // 更新当前显示的数据集
+                data = filteredPositions2;
+
+                // 更新时间间隔
+                updateIntervals();
+
+                // 清空当前显示
+                d3.select("#chart").selectAll("*").remove();
+
+                // 计算 svg 总高度
+                const totalHeightValue = calculateTotalHeight(filteredPositions2, intervalWidths, rowHeight, groupSpacing, margin, sortedTimes, currentIntervals, circleRadius, rectSpacing);
+
+                // 根据过滤后的 positions 计算新的位置数据
+                const newPositions2 = calculateSortedPositions(filteredPositions2, intervalWidths, rowHeight, rectSpacing, margin, intervalPositions, circleRadius, sortedTimes, currentIntervals, groupSpacing);
+
+                // 使用新的位置数据和过滤后的数据集重新绘制图表
+                drawChart(intervalWidths, intervalPositions, total, totalHeightValue, newPositions2);
+            }
+
+            function updateIntervals() {
+                const minIntervalWidth = 65;
+
+                // 移除重複的區間
+                currentIntervals = Array.from(new Set(currentIntervals));
+                console.log("Current intervals after deduplication:", currentIntervals);
+
+                if (!currentIntervals || currentIntervals.length === 0) {
+                    console.warn("currentIntervals 为空或未定义，跳过更新。");
+                    const maxIntervalSet = findMaxIntervalWithNeighbors();  // 找到最多餐廳的區間集
+                    if (!maxIntervalSet) {
+                        console.log("所有区间没有数据，重置视图。");
+                        resetToDefaultView();
+                        return;
+                    }
+                    currentIntervals = maxIntervalSet;
+                } else {
+                    // 計算當前區間的餐廳總數
+                    const intervalTotals = getCurrentIntervalTotals(currentIntervals, circleRadius, data, width, margin, intervalWidths);
+                    const total = d3.sum(Object.values(intervalTotals));
+
+                    if (isNaN(total) || total === 0) {
+                        console.warn("Total 餐厅数为 NaN 或 0，跳过更新。");
+                        resetToDefaultView();
+                        return;
+                    }
+
+                    // 獲取當前篩選條件的最左側區間
+                    const firstInterval = currentIntervals[0];
+                    const firstIntervalIndex = intervals.indexOf(firstInterval);
+
+                    // 檢查當前篩選條件下是否有餐廳數量
+                    const hasData = currentIntervals.some(interval => intervalTotals[interval] > 10);
+
+                    // 如果當前區間篩選結果沒有餐廳，將 startIndex 設置為最多餐廳的區間
+                    if (!hasData) {
+                        const maxInterval = currentIntervals.reduce((a, b) => (intervalTotals[a] > intervalTotals[b] ? a : b));
+                        const maxIntervalIndex = intervals.indexOf(maxInterval);
+
+                        // 顯示最多餐廳的區間作為新的 `startIndex`
+                        let startIndex = Math.max(maxIntervalIndex - 1, 0);  // 向左顯示最多餐廳的前一個區間
+                        let endIndex = startIndex + 2;  // 保證顯示三個區間
+
+                        if (endIndex >= intervals.length) {
+                            endIndex = intervals.length - 1;  // 確保不超過總長度
+                            startIndex = Math.max(0, endIndex - 2);  // 保證顯示三個區間
+                        }
+
+                        currentIntervals = intervals.slice(startIndex, endIndex + 1);  // 更新 currentIntervals 顯示最多餐廳的區間
+                    } else {
+                        // 當篩選結果有餐廳時，使用當前篩選條件的最左側區間作為 `startIndex`
+                        let startIndex = firstIntervalIndex;  // 從最左側區間開始
+                        if (startIndex < 0) {
+                            startIndex = 0;
+                        }
+
+                        let endIndex = startIndex + 2;  // 保證顯示三個區間
+                        if (endIndex >= intervals.length) {
+                            endIndex = intervals.length - 1;
+                            startIndex = Math.max(0, endIndex - 2);
+                        }
+
+                        currentIntervals = intervals.slice(startIndex, endIndex + 1);  // 更新 currentIntervals 顯示當
+                    }
+                }
+
+                console.log("Interval widths before update:", currentIntervals);
+                let totalUsedWidth = 0;
+
+                // 計算每個區間的寬度
+                currentIntervals.forEach(interval => {
+                    const intervalTotals = getCurrentIntervalTotals(currentIntervals, circleRadius, data, width, margin, intervalWidths);
+                    const total = d3.sum(Object.values(intervalTotals));
+
+                    // 使用比例計算區間寬度，確保不小於最小寬度
+                    intervalWidths[interval] = Math.max((intervalTotals[interval] / total) * (width - margin.left - margin.right), minIntervalWidth);
+                    totalUsedWidth += intervalWidths[interval];
+                });
+
+                // 確保總寬度不超過畫布寬度
+                if (totalUsedWidth > (width - margin.left - margin.right)) {
+                    const scaleFactor = (width - margin.left - margin.right) / totalUsedWidth;
+                    currentIntervals.forEach(interval => {
+                        intervalWidths[interval] *= scaleFactor;
+                    });
+                }
+
+                // 計算每個區間的x位置
+                let currentPosition = margin.left;
+                currentIntervals.forEach(interval => {
+                    intervalPositions[interval] = currentPosition;
+                    currentPosition += intervalWidths[interval];
+                });
+
+                console.log("Interval widths after update:", intervalWidths);
+                console.log("Interval positions after update:", intervalPositions);
+
+                // 清空當前顯示，重繪圖表和 Minimap
+                d3.select("#chart").selectAll("*:not(.left)").remove();
+                d3.select("#x-axis-svg").selectAll("*").remove();
+
+                const totalHeightValue = calculateTotalHeight(data, intervalWidths, rowHeight, groupSpacing, margin, sortedTimes, currentIntervals, circleRadius, rectSpacing);
+
+                if (isNaN(totalHeightValue) || totalHeightValue <= 0 || !isFinite(totalHeightValue)) {
+                    console.error("Total height 计算失败，跳过绘图。");
+                    return;
+                }
+
+                drawChart(intervalWidths, intervalPositions, total, totalHeightValue, filteredIds);
+
+                const redBox = drawMinimap(intervalPositions, totalHeightValue, intervalWidths, intervals, sortedTimes, data, currentIntervals);
+                const midIndex = Math.floor(currentIntervals.length / 2);
+                const midInterval = currentIntervals[midIndex];
+                const targetXPosition = intervalPositions[midInterval] + intervalWidths[midInterval] / 2;
+            }
+
+
+            function resetToDefaultView() {
+                d3.select("#chart")
+                    .selectAll("*:not(.left)")
+                    .remove();
+
+                d3.select("#x-axis-svg").selectAll("*").remove();
+
+                d3.select("#chart")
+                    .append("text")
+                    .attr("x", width / 2)
+                    .attr("y", height / 2)
+                    .attr("text-anchor", "middle")
+                    .style("font-size", "24px")
+                    .style("fill", "#666")
+                    .text("所有区间没有数据");
+            }
+
+            function drawChart(intervalWidths, intervalPositions, total, totalHeight, positions = null, filteredIds = null) {
+
+                if (totalHeight == 0) {
+                    totalHeight = 3000; // 设置一个默认的高度
+                }
+
+                if (isNaN(totalHeight) || totalHeight <= 0 || !isFinite(totalHeight)) {
+                    console.error("Invalid total height:", totalHeight);
+                    return;
+                }
+
+                const svg = d3.select("#chart")
+                    .append("svg")
+                    .attr("width", "100%")
+                    .attr("height", totalHeight);
+
+                // 清除舊pattern
+                svg.select('defs').selectAll('pattern').remove();
+                // 检查并清除旧的箭头按钮
+                d3.selectAll(".arrow").remove();
+
+                if (!positions || !Array.isArray(positions)) {
+                    positions = calculatePositions(data, intervalWidths, rowHeight, rectSpacing, margin, intervalPositions, circleRadius, sortedTimes, currentIntervals, groupSpacing);
+                }
+
+                // 如果傳入了 filteredIds，則根據 filteredIds 進行過濾
+                if (filteredIds && Array.isArray(filteredIds)) {
+                    positions = positions.filter(d => filteredIds.includes(d.r_id));
+                }
+
+
+                function createPattern(defs, id, url) {
+                    return svg.select('defs').append('pattern')
+                        .attr('id', id)
+                        .attr('patternUnits', 'objectBoundingBox')
+                        .attr('width', 1)
+                        .attr('height', 1)
+                        .append('image')
+                        .attr('xlink:href', url)
+                        .attr('width', 2 * innerRadius)
+                        .attr('height', 2 * innerRadius)
+                        .attr('preserveAspectRatio', 'xMidYMid slice')
+                        .attr('x', 0)
+                        .attr('y', 0)
+                        .on("error", function () {
+                            console.error("Image load error: " + url);
+                        });
+                }
+
+                const colors = d3.scaleOrdinal()
+                    .domain(sortedTimes)
+                    .range(['#d6af99', '#a2cdab', '#7ea1dd', '#fdc85e', '#e67575', '#b295ab']);
+
+                // 預先繪製rect
+                svg.append("g")
+                    .selectAll("rect")
+                    .data(positions.filter(d => d.border))
+                    .enter()
+                    .append("rect")
+                    .attr("x", d => d.x)
+                    .attr("y", d => d.y)
+                    .attr("width", d => Object.values(intervalWidths).reduce((a, b) => a + b, 0))
+                    .attr("height", d => d.height)
+                    .attr("fill", d => colors(d.time) || "#ccc")
+                    .attr("stroke", d => colors(d.time) || "#ccc")
+                    .attr("stroke-width", 6)
+                    .attr("opacity", 0.5);
+
+                // 為每個區間的右邊界繪製分隔線
+                svg.append("g")
+                    .selectAll(".interval-separator")
+                    .data(currentIntervals.filter((d, i) => i < currentIntervals.length - 1))  // 過濾掉最後一個區間
+                    .enter()
+                    .append("line")
+                    .attr("class", "interval-separator")
+                    .attr("x1", d => intervalPositions[d] + intervalWidths[d])  // 計算右邊界
+                    .attr("y1", margin.top)
+                    .attr("x2", d => intervalPositions[d] + intervalWidths[d])  // 計算右邊界
+                    .attr("y2", totalHeight - margin.bottom)
+                    .attr("stroke", "white")
+                    .attr("stroke-width", 2);
+
+
+                // 過濾沒有positions 的數據，僅繪製 circle 相關的元素
+                const filteredPositions = positions.filter(d => d.r_photo_env1 !== undefined && d.r_photo_env1 !== null && d.r_photo_env1 !== '');
+
+                const defs = svg.append('defs')
+                    .append('g')
+                    .attr('class', 'patternGroup');
+
+                filteredPositions.forEach((d, i) => {
+                    const patternId = `pattern-${i}`;
+                    createPattern(defs, patternId, d.r_photo_env1);
+                });
+
+                const tooltip = d3.select("#tooltip");
+                const circles = svg.append('g')
+                    .selectAll("g.circle-group")
+                    .data(filteredPositions)  // 確保 filteredPositions 是通過 calculatePositions 計算得來
+                    .enter()
+                    .append("g")
+                    .attr("class", "circle-group")
+                    .attr("transform", d => `translate(${d.x + circleRadius}, ${d.y + circleRadius})`);  // 使用 calculatePositions 的 x 和 y
+
+                let intervalId;
+
+                circles.on("mouseover", function (event, d) {
+                    if (isDragging) {
+                        return;
+                    }
+                    else {
+                        d3.select(this).style("cursor", "pointer"); // 拖曳開始時設為 pointer
+                        tooltip.style("display", "block");
+
+                        // 更新 tooltip 内容
+                        tooltip.select("#tooltip-title").text(d.r_name || "");
+                        tooltip.select("#tooltip-food-dishes").html(`
+                        <div style="display: flex; flex-wrap: wrap; margin-bottom: 5px;">
+                            ${d.r_food_dishes.split('、').slice(0, 3).map(dish => `
+                                <div style="background-color: #FFD700; padding: 3px 5px; margin-right: 5px; margin-bottom: 5px; font-size: 12px; border-radius: 5px; white-space: nowrap;">
+                                    ${dish}
+                                </div>
+                            `).join('')}
+                        </div>
+                    `);
+
+                        tooltip.select("#tooltip-rating")
+                            .style("font-size", "15px")
+                            .text(`評分: ${d.r_rating} 星`);
+                        //懸浮訊息
+                        tooltip.select("#tooltip-ratings").html(`
+                        <div style="display: flex; align-items: center; margin-bottom: 0px; font-size: 12px; max-width: 200px;">
+                            <span style="width: 40px;">食物:</span>
+                            <div style="background-color: #ccc; width: 100px; height: 8px; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div style="background-color: gold; width: ${d.r_rating_food * 20}px; height: 8px;"></div>
+                            </div>
+                            <span style="margin-left: 5px; white-space: nowrap;">${d.r_rating_food} 星</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 0px; font-size: 12px; max-width: 200px;">
+                            <span style="width: 40px;">服務:</span>
+                            <div style="background-color: #ccc; width: 100px; height: 8px; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div style="background-color: gold; width: ${d.r_rate_service * 20}px; height: 8px;"></div>
+                            </div>
+                            <span style="margin-left: 5px; white-space: nowrap;">${d.r_rate_service} 星</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 0px; font-size: 12px; max-width: 200px;">
+                            <span style="width: 40px;">衛生:</span>
+                            <div style="background-color: #ccc; width: 100px; height: 8px; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div style="background-color: gold; width: ${d.r_rate_clean * 20}px; height: 8px;"></div>
+                            </div>
+                            <span style="margin-left: 5px; white-space: nowrap;">${d.r_rate_clean} 星</span>
+                        </div>
+                        <div style="display: flex; align-items: center; font-size: 12px; max-width: 200px;">
+                            <span style="width: 40px;">划算度:</span>
+                            <div style="background-color: #ccc; width: 100px; height: 8px; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div style="background-color: gold; width: ${d.r_rate_value * 20}px; height: 8px;"></div>
+                            </div>
+                            <span style="margin-left: 5px; white-space: nowrap;">${d.r_rate_value} 星</span>
+                        </div>
+                    `);
+
+
+                        const images = [d.r_photo_env1, d.r_photo_env2, d.r_photo_env3];
+                        let currentImageIndex = 0;
+                        const carouselImages = tooltip.select("#carousel-images");
+
+                        // 清空舊圖片
+                        carouselImages.html("");
+
+                        // 添加新的圖片進carousel
+                        images.forEach(imgUrl => {
+                            carouselImages.append("img")
+                                .attr("src", imgUrl)
+                                .attr("style", "width: 100%; height: auto; object-fit: cover; border-radius: 8px;"); // 确保图片填满容器并保持比例
+                        });
+
+                        // carousel運轉
+                        const intervalId = setInterval(() => {
+                            currentImageIndex = (currentImageIndex + 1) % images.length;
+                            carouselImages.style("transform", `translateX(-${currentImageIndex * 100}%)`);
+                        }, 3000); // 每3秒切換
+
+                        d3.select(this).on("mouseout", function () {
+                            // 隱藏訊息
+                            clearInterval(intervalId);
+                            tooltip.style("display", "none");
+                        });
+                    }
+                })
+                    .on("mousemove", function (event) {
+                        // 获取 tooltip 的寬度或高度
+                        const tooltipWidth = tooltip.node().offsetWidth;
+                        const tooltipHeight = tooltip.node().offsetHeight;
+
+                        // 計算離右側邊界距離
+                        const pageWidth = window.innerWidth;
+                        const totalHeight = calculateTotalHeight(data, intervalWidths, rowHeight, groupSpacing, margin, sortedTimes, currentIntervals, circleRadius, rectSpacing);
+
+                        // 默認位置，滑鼠右下方
+                        let leftPosition = event.pageX + 10;
+                        let topPosition = event.pageY + 10;
+
+                        // 如果 tooltip 超出右側邊界，改為顯示在左側
+                        if (leftPosition + tooltipWidth > pageWidth) {
+                            leftPosition = event.pageX - tooltipWidth - 10;
+                        }
+
+                        // 如果 tooltip 超出底部則屬標上方
+                        if (topPosition + tooltipHeight > totalHeight) {
+                            topPosition = event.pageY - tooltipHeight - 10;
+                        }
+
+                        // 更新 tooltip 位置
+                        tooltip
+                            .style("left", leftPosition + "px")
+                            .style("top", `${topPosition}px`);
+                    });
+
+
+                // 繪製圓圈並填充初始圖片
+                circles.append("circle")
+                    .attr("r", innerRadius)
+                    .style("fill", function (d, i) {
+                        const patternId = `pattern-${i}`;
+                        return `url(#${patternId})`;
+                    });
+
+                const radius = 60;
+                // 確保 colorClass 是具體的顏色值
+                const color = d3.scaleOrdinal()
+                    .domain(leftData.map(d => d.vibe))
+                    .range(leftData.map(d => {
+                        // 假設 d.colorClass 是 CSS 類名，你可以在這裡將它映射為具體的顏色值
+                        switch (d.colorClass) {
+                            case 'color-1': return '#FFDCFE';
+                            case 'color-2': return '#86E5C2';
+                            case 'color-3': return '#FFBF84';
+                            case 'color-4': return '#DDC2FF';
+                            case 'color-5': return '#B2DBF9';
+                            default: return '#d3d3d3'; // 預設顏色
+                        }
+                    }));
+
+                const arc = d3.arc()
+                    .innerRadius(innerRadius)
+                    .outerRadius(radius)
+                    .cornerRadius(2);
+
+                // 创建圆圈和左右 path
+                filteredPositions.forEach(position => {
+                    // 每个 position 对应的 <g> 元素，这个组将包含所有的子元素（圆圈和路径）
+                    const circleGroup = circles.filter(d => d === position)
+                        .append('g');
+
+                    // 创建专属的 leftPie 数据
+                    const leftPie = d3.pie()
+                        .startAngle(-Math.PI)
+                        .endAngle(0)
+                        .value(() => 1);
+
+                    const leftDataForThisPosition = leftPie(leftData); // 每个 position 都有专属的 leftData
+
+                    // 在 circleGroup 内添加左侧 path
+                    const leftPaths = circleGroup.selectAll('path.left')
+                        .data(leftDataForThisPosition)
+                        .enter()
+                        .append('path')
+                        .attr('class', 'left')
+                        .attr('d', arc)
+                        .attr('fill', d => {
+                            const restaurantVibes = (position.r_atmosphere && typeof position.r_atmosphere === 'string')
+                                ? position.r_atmosphere.split('，').map(v => v.trim()) // 拆分气氛为数组
+                                : [];
+
+                            const vibeColor = restaurantVibes.some(vibe => vibe === d.data.vibe) ? color(d.data.vibe) : '#d3d3d3';
+                            return vibeColor;
+                        })
+                        .attr('stroke', 'white')
+                        .style('stroke-width', '1px');
+
+                });
+
+
+                const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+                const dayColor = d => d === 1 ? "#FFD400" : "lightgrey";  // 1為營業時間用黄色，0為不營業用灰色
+
+                // 針對每個餐廳計算 rightData 和繪製 path-right
+                filteredPositions.forEach(position => {
+                    // 創建一個獨立的 circleGroup，來包含此餐廳的 path-right
+                    const circleGroup = circles.filter(d => d === position)
+                        .append('g');
+
+                    // 解析餐廳的營業時間資料 r_days
+                    let r_hours_weekday = [];
+                    try {
+                        const correctedString = position.r_days.replace(/'/g, '"');  // 替換單引號
+                        r_hours_weekday = JSON.parse(correctedString);               // 解析 JSON
+                    } catch (e) {
+                        console.error("Failed to parse r_days:", position.r_days, e);
+                    }
+
+                    // 將餐廳的營業日對應到 rightData (0 或 1 表示是否營業)
+                    const rightData = daysOfWeek.map(day => {
+                        return r_hours_weekday.some(entry => entry.includes(day)) ? 1 : 0;
+                    });
+
+                    // 為該餐廳的 rightData 準備 pie layout
+                    const rightPie = d3.pie()
+                        .startAngle(0)
+                        .endAngle(Math.PI)
+                        .value(() => 1);  // 每一天都有相同寬度
+
+                    const rightDataReady = rightPie(rightData);  // 為該餐廳計算的 pie layout
+
+                    // 在 circleGroup 內繪製每個 path-right，並根據 rightData 著色
+                    circleGroup.selectAll('path.right')
+                        .data(rightDataReady)
+                        .enter()
+                        .append('path')
+                        .attr('class', 'right')
+                        .attr('d', arc)
+                        .attr('fill', (d, i) => dayColor(rightData[i]))  // 根據 rightData 著色
+                        .attr('stroke', 'white')
+                        .style('stroke-width', '1px');
+
+                    // 添加對應的每週文字 (一、二、三...)
+                    const days = ["一", "二", "三", "四", "五", "六", "日"];
+                    circleGroup.selectAll('text.days')
+                        .data(rightDataReady)
+                        .enter()
+                        .append('text')
+                        .attr('class', 'days')
+                        .attr('transform', d => {
+                            const pos = arc.centroid(d);
+                            return `translate(${pos[0]}, ${pos[1]})`;
+                        })
+                        .attr('text-anchor', 'middle')
+                        .attr('dy', '0.35em')
+                        .attr('font-size', '10px')
+                        .attr('font-weight', 'bold')
+                        .text((d, i) => days[i]);
+                });
+
+
+                const smallCircleRadius = 10;
+                const iconOffset = radius + smallCircleRadius + 2;
+                // Add star icon
+
+                circles.append('circle')
+                    .attr('class', 'small-circle') // Add class for hiding/showing
+                    .attr('cx', d => Math.cos(-Math.PI / 5) * iconOffset)
+                    .attr('cy', d => Math.sin(-Math.PI / 5) * iconOffset)
+                    .attr('r', smallCircleRadius)
+                    .attr('fill', 'white')
+                    .attr('stroke', '#fff')
+                    .attr('stroke-width', '1px');
+
+                circles.append("text")
+                    .attr("class", "icon-text") // Add class for hiding/showing
+                    .attr("x", Math.cos(-Math.PI / 5) * iconOffset)
+                    .attr("y", Math.sin(-Math.PI / 5) * iconOffset)
+                    .attr("text-anchor", "middle")
+                    .attr("alignment-baseline", "middle")
+                    .attr("font-size", "15px")
+                    // .attr("class", "fas fa-star")
+                    .attr("fill", "#FFD400")
+                    //.attr("opacity", 0.5)
+                    .text('\uf005') // Font Awesome - star (Unicode)
+                    .style("font-family", "FontAwesome"); // Ensure font-family is set
+
+                // 添加星星评分
+                circles.append("text")
+                    .attr("class", "icon-text") // Add class for hiding/showing
+                    .attr("x", Math.cos(-Math.PI / 5) * iconOffset) // 调整位置
+                    .attr("y", Math.sin(-Math.PI / 5) * iconOffset)
+                    .attr("text-anchor", "middle")
+                    .attr("alignment-baseline", "middle")
+                    .attr("font-size", "12px")
+                    .attr("font-weight", "bold")
+                    .text(function (d) {
+                        // console.log('Rating:', d.r_rating);  // 检查评分数据
+                        return d.r_rating !== undefined ? d.r_rating : 'N/A'; // 如果未定义，返回占位符
+                    });
+
+                // 添加停车图标
+                circles.append('circle')
+                    .attr('class', 'small-circle') // Add class for hiding/showing
+                    .attr('cx', Math.cos(-Math.PI / 4 + 0.5) * iconOffset)
+                    .attr('cy', Math.sin(-Math.PI / 4 + 0.5) * iconOffset)
+                    .attr('r', smallCircleRadius)
+                    .attr('fill', 'white')
+                    .attr('stroke', 'white')
+                    .attr('stroke-width', '1px');
+
+                circles.append("text")
+                    .attr("class", "icon-text") // Add class for hiding/showing
+                    .attr("x", Math.cos(-Math.PI / 4 + 0.5) * iconOffset)
+                    .attr("y", Math.sin(-Math.PI / 4 + 0.51) * iconOffset)
+                    .attr("text-anchor", "middle")
+                    .attr("alignment-baseline", "middle")
+                    .attr("font-size", "15px")
+                    // .attr("class", "fas fa-parking")
+                    .attr('fill', d => {
+                        if (d.r_has_parking == 1) {
+                            return 'blue'; // If there is parking, set color to blue
+                        } else {
+                            return 'lightgrey'; // If there is no parking, set color to light grey
+                        }
+                    })
+                    .text('\uf540') // Font Awesome - parking (Unicode)
+                    .style("font-family", "FontAwesome"); // Ensure font-family is set
+
+                dragElement(circles, circleRadius, x, y);
+                // 呼叫函數，並傳入不同的半徑值
+                toggleCircles(innerRadius, circleRadius);
+
+                // 各個用餐區間背景顏色
+                const timeColorMap = sortedTimes.reduce((map, time, index) => {
+                    map[time] = colors(index);
+                    return map;
+                }, {});
+
+                svg.append("g")
+                    .selectAll("text")
+                    .data(positions.filter(d => d.label))
+                    .enter()
+                    .append("text")
+                    .attr("x", margin.left) // 調整 x 坐標
+                    .attr("y", d => d.y - 12) // 調整 y 坐標
+                    .attr("dy", "0.35em")
+                    .attr("text-anchor", "start")
+                    .attr("font-size", "1rem")
+                    .attr("fill", "black") // 添加顏色以確保文本可見
+                    .text(d => `用餐時間: ${d.r_time_low === '' ? '無限制' : d.r_time_low} 分鐘`);
+
+
+
+                // 设置 SVG 宽度为窗口宽度
+                const xAxisSvg = d3.select("#x-axis-svg")
+                    .attr("width", window.innerWidth)
+                    .attr("height", 50);  // 高度可以根据需求调整
+
+                // 設置 xScale，將 domain 設置為 0 到總區間寬度
+                const xScale = d3.scaleLinear()
+                    .domain([0, width])  // 定義 domain 是 0 到總區間寬度
+                    .range([0, width]);  // 映射到整個 SVG 寬度範圍
+
+                // 初始化 tickValues 数组，第一个 tickValue 为 margin.left
+                let tickValues = [margin.left];
+
+                // 累积计算 tickValues，第二个 tickValue 为第一个区间的宽度，依次累加
+                currentIntervals.reduce((accWidth, interval, i) => {
+                    const intervalWidth = intervalWidths[interval];
+                    const nextTickValue = accWidth + intervalWidth;
+                    tickValues.push(nextTickValue);  // 将累积宽度作为下一个 tickValue
+                    return nextTickValue;
+                }, margin.left);  // 初始化累积宽度为 margin.left
+
+                // 调试输出检查 tickValues
+                console.log("Calculated tickValues:", tickValues);
+
+                // 使用 tickValues 来绘制 X 轴
+                xAxisSvg.append("g")
+                    .attr("transform", `translate(0, 0)`)
+                    .call(d3.axisBottom(xScale)
+                        .tickValues(tickValues)  // 使用计算的 tickValues
+                        .tickFormat((d, i) => {
+                            // 返回区间标签或空字符串
+                            const closestInterval = currentIntervals[i];
+                            return closestInterval ? closestInterval : '';
+                        })
+                    )
+                    .selectAll("text")  // 選擇所有軸上的文本
+                    .style("font-size", ".9rem");  // 設置文本大小
+
+
+                // 向左移动的箭头
+                d3.select("body").append("div")
+                    .attr("class", "arrow arrow-left")
+                    .text("◀")
+                    .on("click", () => {
+                        const firstIndex = intervals.indexOf(currentIntervals[0]);
+
+                        if (firstIndex > 0) {
+                            // Calculate new interval set to shift left by one
+                            const prevStartIndex = Math.max(firstIndex - 1, 0) - 1;
+                            const prevEndIndex = Math.min(prevStartIndex + 2, intervals.length - 1); // 保证仍然显示三个区间
+
+                            // Update currentIntervals to ensure it always contains 3 intervals
+                            currentIntervals = intervals.slice(prevStartIndex + 1, prevEndIndex);  // +1 是为了确保包含 endIndex
+
+                            console.log("Updated intervals after left click:", currentIntervals);
+
+                            // Call update function
+                            updateIntervals();
+                        } else {
+                            console.log("已经到达第一个区间，无法继续向左移动。");
+                        }
+                    });
+
+                // 向右移动的箭头
+                d3.select("body").append("div")
+                    .attr("class", "arrow arrow-right")
+                    .text("▶")
+                    .on("click", () => {
+                        const lastIndex = intervals.indexOf(currentIntervals[currentIntervals.length - 2]);
+
+                        if (lastIndex < intervals.length - 1) {
+                            // Calculate new interval set to shift right by one 
+                            const nextStartIndex = Math.min(lastIndex, intervals.length - 2); // 移动起点，确保不超出范围
+                            const nextEndIndex = Math.min(nextStartIndex + 1, intervals.length - 1) + 1; // 确保显示三个区间
+
+                            // Update currentIntervals to ensure it always contains 3 intervals
+                            currentIntervals = intervals.slice(nextStartIndex, nextEndIndex);
+
+                            console.log("Updated intervals after right click:", currentIntervals);
+
+                            // Call update function
+                            updateIntervals();
+                        } else {
+                            console.log("已经到达最后一个区间，无法继续向右移动。");
+                        }
+                    });
+
+                // 计算每个区间的中间位置
+                const buttonPositions = currentIntervals.map(interval => {
+                    const position = intervalPositions[interval] + intervalWidths[interval] / 2;  // 区间的中间位置
+                    return { interval: interval, position: position };  // 返回区间和位置的对象
+                });
+
+                // 绘制每个按钮，确保 X 轴是通过 translate 来定位，Y 轴通过 CSS 控制
+                const buttons = svg.selectAll(".save-button")
+                    .data(buttonPositions)
+                    .enter()
+                    .append("g")
+                    .attr("class", "save-button")
+                    .attr("transform", d => `translate(${d.position}, 0)`);  // X 轴的平移使用 translate
+
+                // 在绘制完 X 轴后，绘制每个区间的 X 轴线段
+                currentIntervals.forEach((interval, i) => {
+                    const xStart = tickValues[i];      // 区间起始位置
+                    const xEnd = tickValues[i + 1];    // 区间结束位置
+
+                    xAxisSvg.append("line")
+                        .attr("id", `x-axis-segment-${i}`) // 赋予唯一的 ID
+                        .attr("x1", xStart)
+                        .attr("x2", xEnd)
+                        .attr("y1", 0)  // 根据你的 X 轴位置调整 y1 和 y2
+                        .attr("y2", 0)
+                        .attr("stroke", "black")
+                        .attr("stroke-width", 1);
+                });
+                // 隐藏默认的 X 轴线（path 元素）
+                xAxisSvg.selectAll("path.domain").remove();
+
+
+                // 创建按钮外框
+                buttons.append("rect")
+                    .attr("class", "map-button")
+                    .attr("width", 50)
+                    .attr("height", 30)
+                    .attr("fill", "lightblue")
+                    .attr("rx", 5)  // 圆角矩形
+                    .attr("ry", 5)
+                    .style("opacity", 0.8)
+                    .style("cursor", "pointer")
+                    .on("mouseover", (event, d) => {
+                        d3.select(this)
+                            .attr("opacity", 1);
+
+                        const intervalIndex = currentIntervals.indexOf(d.interval);
+
+                        if (intervalIndex !== -1) {
+                            // 高亮对应的 X 轴线段
+                            d3.select(`#x-axis-segment-${intervalIndex}`)
+                                .attr("stroke", "rgba(196, 127, 0, 0.716)")
+                                .attr("stroke-width", 4);
+
+                            // 高亮當前區間
+                            d3.select(`.tick:nth-of-type(${intervalIndex + 2})`)  // nth-of-type從1開始，+2因為包括margin
+                                .select("text")
+                                .attr("fill", "rgba(196, 127, 0, 0.716)")  // 高亮顏色
+                                .style("font-size", "1.1rem")
+                                .style("font-weight", "bold");
+
+                            d3.select(`.tick:nth-of-type(${intervalIndex + 2})`)
+                                .select("line")
+                                .attr("stroke", "rgba(196, 127, 0, 0.716)")
+                                .attr("stroke-width", 3);
+
+                            // highlight前一個
+                            d3.select(`.tick:nth-of-type(${intervalIndex + 1})`)  // 前一個區間的索引
+                                .select("text")
+                                .attr("fill", "rgba(196, 127, 0, 0.716)")  // 高亮顏色
+                                .style("font-size", "1.1rem")
+                                .style("font-weight", "bold");;
+
+                            d3.select(`.tick:nth-of-type(${intervalIndex + 1})`)
+                                .select("line")
+                                .attr("stroke", "rgba(196, 127, 0, 0.716)")
+                                .attr("stroke-width", 3);
+
+                            // 計算區間的起點和寬度
+                            const xStart = intervalPositions[d.interval];
+                            const width = intervalWidths[d.interval];
+
+                            // 創建一個新的高亮 rect 或者更新已存在的區間 rect
+                            svg.append("rect")
+                                .attr("x", xStart)
+                                .attr("y", margin.top)
+                                .attr("width", width)
+                                .attr("height", totalHeight - margin.top - margin.bottom)
+                                .attr("fill", "orange")  // 高亮顏色
+                                .attr("opacity", 0.1)    // 高亮透明度
+                                .attr("class", "highlight-rect");
+                        }
+                    })
+                    .on("mouseout", (event, d) => {
+                        d3.select(this)
+                            .attr("opacity", 0.5);
+
+                        const intervalIndex = currentIntervals.indexOf(d.interval);
+
+                        if (intervalIndex !== -1) {
+                            // 恢复对应的 X 轴线段样式
+                            d3.select(`#x-axis-segment-${intervalIndex}`)
+                                .attr("stroke", "black")
+                                .attr("stroke-width", 1);
+
+                            // 恢復當前區間的樣式
+                            d3.select(`.tick:nth-of-type(${intervalIndex + 2})`)
+                                .select("text")
+                                .attr("fill", "black")
+                                .style("font-size", ".9rem")
+                                .style("font-weight", "normal");
+
+                            d3.select(`.tick:nth-of-type(${intervalIndex + 2})`)
+                                .select("line")
+                                .attr("stroke", "black")
+                                .attr("stroke-width", 1);
+
+                            // 移除高亮的橫線
+                            d3.selectAll(".highlight-line").remove();
+
+                            d3.select(`.tick:nth-of-type(${intervalIndex + 1})`)
+                                .select("text")
+                                .attr("fill", "black")
+                                .style("font-size", ".9rem")
+                                .style("font-weight", "normal");
+
+                            d3.select(`.tick:nth-of-type(${intervalIndex + 1})`)
+                                .select("line")
+                                .attr("stroke", "black")
+                                .attr("stroke-width", 1);
+
+                            d3.selectAll(".highlight-rect").remove();
+                        }
+                    })
+                    .on("click", (event, d) => {
+                        const restaurantsInInterval = data.filter(restaurant => categorizePrice(restaurant.r_price_low) === d.interval);
+                        const restaurantIds = restaurantsInInterval.map(r => r.r_id);
+                        const restaurantIdsParam = restaurantIds.join(",");
+                        window.location.href = `map_background.php?restaurant_ids=${restaurantIdsParam}`;
+                    });
+
+                // 在按钮中添加文字
+                buttons.append("text")
+                    .attr("x", 25)
+                    .attr("y", 20)
+                    .attr("text-anchor", "middle")
+                    .attr("fill", "black")
+                    .style("cursor", "pointer")
+                    .text("地圖")
+                    .on("mouseover", (event, d) => {
+                        // d3.select("")
+                        const intervalIndex = currentIntervals.indexOf(d.interval);
+
+                        if (intervalIndex !== -1) {
+                            // 高亮对应的 X 轴线段
+                            d3.select(`#x-axis-segment-${intervalIndex}`)
+                                .attr("stroke", "rgba(196, 127, 0, 0.716)")
+                                .attr("stroke-width", 4);
+
+                            // 高亮當前區間
+                            d3.select(`.tick:nth-of-type(${intervalIndex + 2})`)  // nth-of-type從1開始，+2因為包括margin
+                                .select("text")
+                                .attr("fill", "rgba(196, 127, 0, 0.716)")  // 高亮顏色
+                                .style("font-size", "1.1rem")
+                                .style("font-weight", "bold");
+
+                            d3.select(`.tick:nth-of-type(${intervalIndex + 2})`)
+                                .select("line")
+                                .attr("stroke", "rgba(196, 127, 0, 0.716)")
+                                .attr("stroke-width", 3);
+
+                            // highlight前一個
+                            d3.select(`.tick:nth-of-type(${intervalIndex + 1})`)  // 前一個區間的索引
+                                .select("text")
+                                .attr("fill", "rgba(196, 127, 0, 0.716)")  // 高亮顏色
+                                .style("font-size", "1.1rem")
+                                .style("font-weight", "bold");;
+
+                            d3.select(`.tick:nth-of-type(${intervalIndex + 1})`)
+                                .select("line")
+                                .attr("stroke", "rgba(196, 127, 0, 0.716)")
+                                .attr("stroke-width", 3);
+
+                            // 計算區間的起點和寬度
+                            const xStart = intervalPositions[d.interval];
+                            const width = intervalWidths[d.interval];
+
+                            // 創建一個新的高亮 rect 或者更新已存在的區間 rect
+                            svg.append("rect")
+                                .attr("x", xStart)
+                                .attr("y", margin.top)
+                                .attr("width", width)
+                                .attr("height", totalHeight - margin.top - margin.bottom)
+                                .attr("fill", "orange")  // 高亮顏色
+                                .attr("opacity", 0.1)    // 高亮透明度
+                                .attr("class", "highlight-rect");
+                        }
+                    })
+                    .on("mouseout", (event, d) => {
+                        const intervalIndex = currentIntervals.indexOf(d.interval);
+
+                        if (intervalIndex !== -1) {
+                            // 恢复对应的 X 轴线段样式
+                            d3.select(`#x-axis-segment-${intervalIndex}`)
+                                .attr("stroke", "black")
+                                .attr("stroke-width", 1);
+
+                            // 恢復當前區間的樣式
+                            d3.select(`.tick:nth-of-type(${intervalIndex + 2})`)
+                                .select("text")
+                                .attr("fill", "black")
+                                .style("font-size", ".9rem")
+                                .style("font-weight", "normal");
+
+                            d3.select(`.tick:nth-of-type(${intervalIndex + 2})`)
+                                .select("line")
+                                .attr("stroke", "black")
+                                .attr("stroke-width", 1);
+
+                            // 移除高亮的橫線
+                            d3.selectAll(".highlight-line").remove();
+
+                            d3.select(`.tick:nth-of-type(${intervalIndex + 1})`)
+                                .select("text")
+                                .attr("fill", "black")
+                                .style("font-size", ".9rem")
+                                .style("font-weight", "normal");
+
+                            d3.select(`.tick:nth-of-type(${intervalIndex + 1})`)
+                                .select("line")
+                                .attr("stroke", "black")
+                                .attr("stroke-width", 1);
+
+                            d3.selectAll(".highlight-rect").remove();
+                        }
+                    })
+                    .on("click", (event, d) => {
+                        const restaurantsInInterval = data.filter(restaurant => categorizePrice(restaurant.r_price_low) === d.interval);
+                        const restaurantIds = restaurantsInInterval.map(r => r.r_id);
+                        const restaurantIdsParam = restaurantIds.join(",");
+                        window.location.href = `map_background.php?restaurant_ids=${restaurantIdsParam}`;
+                    });
+
+                function removeAllColors() {
+                    const buttons = document.querySelectorAll('.color-button'); // 假設所有按鈕有相同的 class
+                    buttons.forEach(button => button.classList.remove('active-color')); // 移除所有按鈕的顏色
+                }
+
+                // environment 按鈕點擊事件
+                document.getElementById("environment").addEventListener("click", function () {
+                    removeAllColors();  // 移除所有按鈕的顏色
+                    this.classList.add('active-color');  // 為當前按鈕添加顏色
+                    updatePatterns("environment", data, svg); // 傳遞當前點擊按鈕的ID
+                });
+
+                // food 按鈕點擊事件
+                document.getElementById("food").addEventListener("click", function () {
+                    removeAllColors();  // 移除所有按鈕的顏色
+                    this.classList.add('active-color');  // 為當前按鈕添加顏色
+                    updatePatterns("food", data, svg); // 傳遞當前點擊按鈕的ID
+                });
+
+            }
+
+            updateIntervals();
+
+        });
+
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>filter</title>
+    <link rel="stylesheet" href="filter.css">
+    <!-- script -->
+    <script src="https://kit.fontawesome.com/aa19eb2bb9.js" crossorigin="anonymous"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="index-container">
+        <div class="left-panel" id="left-panel">
+            <div class="filter-container">
+                <div class="filter-fixed filter-search">
+                    <input type="text" id="search" placeholder="輸入地點、食物類型...">
+                    <i class="fa-solid fa-times clear-search" style="display: none"></i> <!-- 叉叉图标 -->
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <div id="loading">搜尋中...</div>
+                <div class="message" id="message" style="display: none;">
+                    <p>目前沒有符合的餐廳：\</p>
+                    <p style="font-size: .7rem;">可以試試搜尋：文化中心、日式料理</p>
+                    <div class="message-btn">
+                        <div id="allBtn" class="all-btn">顯示全部餐廳</div>
+                        <div id="backBtn" class="back-btn">關閉</div>
+                    </div>
+                </div>
+                <!-- price -->
+                <div class="filter-item filter-price">
+                    <div class="filter-title">
+                        <label>價錢<span style="font-weight: normal;">（最低主餐）</span></label>
+                    </div>
+                    <div class="range-slider">
+                        <span class="slider-track"></span>
+                        <input type="range" name="min_val" class="min-val" step="1" min="50" max="2000" value="50" oninput="slideMin()">
+                        <input type="range" name="max_val" class="max-val" step="1" min="50" max="2000" value="2000" oninput="slideMax()">
+                        <div class="tooltip min-tooltip"></div>
+                        <div class="tooltip max-tooltip"></div>
+                    </div>
+                    <div class="input-box">
+                        <div class="min-box">
+                            <div class="input-wrap">
+                                <span class="input-addon">$</span>
+                                <input type="text" name="min_input" class="input-field min-input" onchange="setMinInput()">
+                            </div>
+                        </div>
+                        <span style="font-weight: bold;">~</span>
+                        <div class="max-box">
+                            <div class="input-wrap">
+                                <span class="input-addon">$</span>
+                                <input type="text" name="max_input" class="input-field max-input" onchange="setMaxInput()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- time -->
+                <div class="filter-item filter-time">
+                    <div class="filter-title">
+                        <label>用餐時間限制</label>
+                    </div>
+                    <div class="times-btn">
+                        <button class="time-button selected">60</button>
+                        <button class="time-button selected">90</button>
+                        <button class="time-button selected">100</button>
+                        <button class="time-button selected">120</button>
+                        <button class="time-button selected">150</button>
+                        <button class="time-button selected">無限制</button>
+                    </div>
+                </div>
+                <!-- time -->
+                <div class="filter-item filter-time" style="display: none;">
+                    <div class="filter-title">
+                        <label>用餐時間限制</label>
+                        <button id="no-limit-btn" class="active">無限制</button>
+                    </div>
+                    <div class="range-slider">
+                        <span class="slider-track"></span>
+                        <input type="range" id="min-time-slider" name="min_time" class="min-time" step="10" min="60" max="180" value="60" oninput="slideTimeMin()">
+                        <input type="range" id="max-time-slider" name="max_time" class="max-time" step="10" min="60" max="180" value="180" oninput="slideTimeMax()">
+                        <div id="min-time-tooltip" class="tooltip min-time-tooltip"></div>
+                        <div id="max-time-tooltip" class="tooltip max-time-tooltip"></div>
+                    </div>
+                    <div class="input-box">
+                        <div class="min-box">
+                            <div class="input-wrap">
+                                <input type="text" id="min-time-input" name="min_time_input" class="input-field-time min-time-input" onchange="setMinTimeInput()">
+                                <span class="input-addon-time" style="font-size: 0.75rem;">分鐘</span>
+                            </div>
+                        </div>
+                        <span style="font-weight: bold;">~</span>
+                        <div class="max-box">
+                            <div class="input-wrap">
+                                <input type="text" id="max-time-input" name="max_time_input" class="input-field-time max-time-input" onchange="setMaxTimeInput()">
+                                <span class="input-addon-time" style="font-size: 0.75rem;">分鐘</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- opening-hours -->
+                <div class="filter-item filter-opentime">
+                    <div class="filter-title">
+                        <label>營業時間</label>
+                    </div>
+                    <div class="opening-hours">
+                        <div class="weekday-row">
+                            <label class="day-label" data-day="Monday">一</label>
+                            <label class="day-label" data-day="Tuesday">二</label>
+                            <label class="day-label" data-day="Wednesday">三</label>
+                            <label class="day-label" data-day="Thursday">四</label>
+                            <label class="day-label" data-day="Friday">五</label>
+                        </div>
+                        <div class="weekend-row">
+                            <label class="day-label" data-day="Saturday">六</label>
+                            <label class="day-label" data-day="Sunday">日</label>
+                        </div>
+                    </div>
+                </div>
+                <!-- stars -->
+                <div class="filter-item filter-star">
+                    <div class="filter-title">
+                        <label>評分</label>
+                    </div>
+                    <div class="select-btn">
+                        <span class="btn-text">選擇評分</span>
+                        <span class="arrow-dwn"><i class="fa-solid fa-chevron-down"></i></span>
+                    </div>
+                    
+                    <ul class="list-items">
+                        <li class="l-item">
+                            <span class="star-checkbox">
+                                <i class="fa-solid fa-check check-icon"></i>
+                            </span>
+                            <span class="item-text">3.5</span>
+                        </li>
+                        <li class="l-item">
+                            <span class="star-checkbox">
+                                <i class="fa-solid fa-check check-icon"></i>
+                            </span>
+                            <span class="item-text">4</span>
+                        </li>
+                        <li class="l-item">
+                            <span class="star-checkbox">
+                                <i class="fa-solid fa-check check-icon"></i>
+                            </span>
+                            <span class="item-text">4.5</span>
+                        </li>
+                        <li class="l-item">
+                            <span class="star-checkbox">
+                                <i class="fa-solid fa-check check-icon"></i>
+                            </span>
+                            <span class="item-text">5</span>
+                        </li>
+                    </ul>
+                </div>
+                <!-- vibes -->
+                <div class="filter-item filter-vibe">
+                    <div class="filter-title">
+                        <label>氣氛</label>
+                    </div>
+                    <div class="vibe">
+                        <button class="vibe-button" id="vibe-dim">昏暗</button>
+                        <button class="vibe-button" id="vibe-retro">復古</button>
+                        <button class="vibe-button" id="vibe-cozy">溫馨</button>
+                        <button class="vibe-button" id="vibe-modern">現代</button>
+                        <button class="vibe-button" id="vibe-industrial">工業</button>
+                        <button class="vibe-button" id="vibe-minimal">簡約</button>
+                        <button class="vibe-button" id="vibe-comfortable">舒適</button>
+                        <button class="vibe-button" id="vibe-bright">明亮</button>
+                        <button class="vibe-button" id="vibe-elegant">典雅</button>
+                        <button class="vibe-button" id="vibe-romantic">浪漫</button>
+                        <button class="vibe-button" id="vibe-noble">高貴</button>
+                        <button class="vibe-button" id="vibe-spacious">寬敞</button>
+                        <button class="vibe-button" id="vibe-nostalgic">懷舊</button>
+                        <button class="vibe-button" id="vibe-family">家庭</button>
+                    </div>
+                </div>
+                <!-- parking -->
+                <div class="filter-item filter-parking">
+                    <div class="filter-title">
+                        <label class="parking-container">附設停車場
+                            <input id="parking-checkbox" type="checkbox">
+                            <span class="checkmark"></span>
+                        </label> 
+                    </div>
+                </div>
+                <div class="filter-reset">
+                    <div class="reset-btn">重置</div>
+                </div>
+            </div>
+        </div>
+        <!-- 收起btn -->
+        <!-- <div class="left-side-arr" id="left-side-arr">
+            <i class="fa-solid fa-caret-up"></i>
+        </div> -->
+        <!-- 右邊區域 -->
+        <div class="right-panel" id="right-panel">
+            <div id="results"></div>
+            <iframe id="scale-iframe" src="final.html" style="width:100%; height:100%;"></iframe>
+        </div>
+    <script>
+        // Set dimensions and margins
+        const margin = { top: 10, right: 30, bottom: 30, left: 60 },
+            width = 0,
+            height = 0;
+
+        // Append SVG object
+        const svg = d3.select("#right-panel")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+        // Read data
+        d3.json('./data.php').then(function (data) {
+            console.log(data); // Check if data is received and structured correctly
+
+            // Add text elements for each restaurant
+            svg.selectAll("text")
+                .data(data)
+                .enter()
+                .append("text")
+                .attr("x", 10)
+                .attr("y", (d, i) => i * 20 + 20)
+                // .text(d => d.r_name)
+                // .style("font-size", "14px")
+                // .style("fill", "black");
+        }).catch(function(error) {
+            console.error('Error fetching data:', error);
+        });
+
+    </script>
+    </div>    
+    <script src="filter.js"></script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+/* 左邊內容物 */
+body, html {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    height: 100%;
+}
+.container {
+    display: flex;
+    height: 100vh;
+    max-width: 1368px;
+    margin: auto;
+    padding: 20px;
+}
+.gallery-container {
+    width: 75%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+.gallery-section {
+    width: 32%;
+    margin-bottom: 10px;
+}
+.restaurant-name {
+    text-align: center;
+    height: 50px; /* Set a fixed height for restaurant names */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden; /* Hide overflow if name is too long */
+}
+.image-container {
+    position: relative;
+    width: 100%;
+    padding-top: 50%; /* Adjusted aspect ratio */
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+.image-container img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+.image-container img.active {
+    opacity: 1;
+}
+.nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 24px;
+    color: white;
+    text-shadow: 0px 0px 5px black;
+    z-index: 2;
+}
+.prev {
+    left: 10px;
+}
+.next {
+    right: 10px;
+}
+.info-container {
+    width: 40%;
+    padding-left: 10px;
+    box-sizing: border-box;
+}
+/* Modal styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 999;
+    padding-top: 50px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.9);
+}
+.modal-content {
+    margin: auto;
+    display: block;
+    width: 80%;
+    max-width: 700px;
+    position: relative;
+}
+.modal-content img {
+    width: 100%;
+    height: auto;
+}
+.modal-close, .modal-prev, .modal-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 40px;
+    color: #fff;
+    cursor: pointer;
+    text-shadow: 0px 0px 5px black;
+}
+.modal-close {
+    top: 15px;
+    right: 35px;
+    transform: translate(0, 0);
+}
+.modal-prev {
+    left: 10px;
+}
+.modal-next {
+    right: 10px;
+}
+
+/* 右邊內容物 */

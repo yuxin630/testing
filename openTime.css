@@ -1,0 +1,36 @@
+.button-container {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.button-container button {
+    margin: 5px;
+    padding: 10px;
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 150px;
+    cursor: pointer;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.button-container button:hover {
+    background-color: #5fa8d3;
+    color: #fff;
+}
+
+.chart-container {
+    width: auto;
+}
+
+.highlight {
+    opacity: 1 !important;
+}
+
+.dim {
+    opacity: 0.2;
+}

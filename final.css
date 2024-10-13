@@ -1,0 +1,196 @@
+/* @font-face { 
+    font-family: 'HunInn';
+    src: url(https://cdn.jsdelivr.net/gh/marsnow/open-huninn-font@1.1/font/jf-openhuninn.eot); 
+    src: url(https://cdn.jsdelivr.net/gh/marsnow/open-huninn-font@1.1/font/jf-openhuninn.eot?#iefix) format('embedded-opentype'), 
+         url(https://cdn.jsdelivr.net/gh/marsnow/open-huninn-font@1.1/font/jf-openhuninn.woff) format('woff'), 
+         url(https://cdn.jsdelivr.net/gh/marsnow/open-huninn-font@1.1/font/jf-openhuninn.ttf) format('truetype'), 
+         url(https://cdn.jsdelivr.net/gh/marsnow/open-huninn-font@1.1/font/jf-openhuninn.svg#SealmemoryHeader) format('svg'); 
+} */
+
+html, body {
+    /* font-family: 'HunInn', sans-serif; */
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+/* 
+* {
+    font-family: 'HunInn', sans-serif;
+} */
+
+.border {
+    stroke: black;
+    stroke-width: 1px;
+    fill: none;
+}
+
+#chart {
+    padding-top: 10%;
+    /* 将主图表下移，避免与顶部的按钮和控制项重叠 */
+}
+
+.x-axis-container {
+    position: fixed;
+    bottom: 5%;
+    width: 100%;
+    background: white;
+}
+
+.top-container {
+    position: fixed;
+    left: 50%;
+    /* 将容器移到画面的中央 */
+    transform: translateX(-50%);
+    /* 确保容器的左边界与中央对齐 */
+    width: 100%;
+    /* 设置宽度为自适应内容 */
+    display: flex;
+    justify-content: center;
+    /* 让内部的按钮和minimap在水平上集中 */
+    z-index: 1000;
+    /* background-color: #ffaf6d; */
+    background-color:rgba(251, 177, 41, 0.716);
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    div{
+        font-size: .9rem
+    }
+}
+
+.btn-container{
+    display: flex;
+    align-items: center;
+    margin-right: 10px;
+}
+
+.btn button{
+    background-color: #ffffff;
+    border: none;
+    padding: .3rem .6rem;
+    font-size: .9rem;
+}
+
+.jump-buttons {
+    display: flex;
+    align-items: center;
+    /* 确保按钮在容器内垂直居中 */
+    margin-right: 20px;
+}
+
+#food, #environment, #hide{
+    transition: background-color 0.2s ease-in-out;
+}
+
+#environment.active-color{
+    background-color: rgb(255, 240, 179);
+}
+#food.active-color{
+    background-color: rgb(255, 240, 179);
+}
+
+.jump-button {
+    margin: 5px;
+    padding: 6px 12px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    background-color: #fff;
+    box-shadow: 0 3px 3px rgba(0, 0, 0, .1);
+    /* background-color: rgba(252, 235, 167, 0.8); */
+    font-size: 12px;
+    width: auto;
+    /* 自动适应文字长度 */
+    height: auto;
+    /* 自动适应内容 */
+    writing-mode: horizontal-tb;
+    /* 保持文字水平显示 */
+}
+
+.control-buttons {
+    display: flex;
+    align-items: center;
+    /* 确保按钮在容器内垂直居中 */
+    margin-right: 20px;
+    bottom{
+        font-size: .9rem;
+    }
+}
+
+#sort-button {
+    padding: 8px 20px;
+    cursor: pointer;
+    font-size: .9rem;
+    background-color: rgb(255, 240, 179);
+    box-shadow: 0 3px 3px rgba(0, 0, 0, .1);
+    /* background-color: rgba(252, 235, 167, 0.8); */
+    border: none;
+    border-radius: 5px;
+}
+
+.jump-buttons,
+.control-buttons,
+.minimap-container {
+    margin-left: 20px;
+    /* 为了不让它们紧贴在一起，增加左右间距 */
+    margin-right: 20px;
+}
+
+
+.minimap-container {
+    width: 200px;
+    height: 85px;
+    border: 1px solid #000;
+    background-color: #f9f9f9;
+}
+
+#tooltip {
+    width: auto;
+    max-width: 600px;
+    font-family: Arial, sans-serif;
+    display: flex;
+    align-items: center;
+}
+
+#tooltip-content {
+    display: flex;
+    align-items: center;
+}
+
+#carousel {
+    margin-right: 10px;
+}
+
+#tooltip-title {
+    font-weight: bold;
+}
+
+#tooltip-ratings div {
+    display: flex;
+    align-items: center;
+
+}
+
+.arrow {
+    cursor: pointer;
+    font-size: 24px;
+    font-weight: bold;
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+}
+
+.arrow-left {
+    left: 1.5%;
+    /* 调整此值以将左箭头位置向右移动 */
+}
+
+.arrow-right {
+    right: 0%;
+    /* 让右箭头紧贴chart右侧 */
+}
+
+/* drag裡面的arrow */
+#left-arrow, #right-arrow {
+    display: none;
+}

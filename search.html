@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>餐廳搜尋</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <style>
+        #loading {
+            display: none;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <input type="text" id="search" placeholder="輸入地點和/或料理類型">
+    <button onclick="fetchData()">搜索</button>
+    <div id="loading">搜尋中...</div>
+    <div id="results"></div>
+
+    <script>
+        function fetchData() {
+            let query = document.getElementById('search').value.trim();
+            if (query === "") {
+                alert("請輸入查詢字串");
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+
+            fetch(`search.php?query=${encodeURIComponent(query)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('網絡回應不正確');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    let results = d3.select("#results");
+                    results.html(""); // 清空之前的結果
+                    if (data.error) {
+                        results.append("div").text("錯誤: " + data.error);
+                    } else {
+                        data.forEach(d => {
+                            let text = `餐廳名稱: ${d.r_name}`;
+                            if (d.distance !== undefined && d.distance !== null) {
+                                text += `, 距離: ${d.distance.toFixed(2)} 公里`;
+                            }
+                            results.append("div")
+                                .style("margin-bottom", "10px")
+                                .text(text);
+                        });
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loading').style.display = 'none';
+                    console.error('獲取數據錯誤:', error);
+                    d3.select("#results").html("無法取得數據，請稍後再試。");
+                });
+        }
+    </script>
+</body>
+</html>

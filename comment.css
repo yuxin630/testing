@@ -1,0 +1,32 @@
+/* "評論"文字 */
+.comment_comment {
+    position: absolute;
+    left: 10px;
+    top: 27%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.block-group {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.block {
+    background-color: #c3d4cc;
+    border-radius: 15px;
+    text-align: center;
+    transition: fill 0.3s ease;
+}
+
+.block-text {
+    fill: black;
+    transition: fill 0.3s ease;
+    font-size: 14px;
+}
+
+text {
+    letter-spacing: -1px;  /* 減少字母間距 */
+    line-height: 1.3em;  /* 調整行距 */
+  }

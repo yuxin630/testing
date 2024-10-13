@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Page</title>
+    <!-- Load d3.js -->
+    <script src="https://d3js.org/d3.v6.js"></script>
+    <!-- Font awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+<body>
+    <!-- Create a div where the graph will take place -->
+    <div id="container">
+        <div id="filter" style="background-color: lightgray; width: 300px; height: 770px;">
+            <h1>filter</h1>
+        </div>
+    </div>
+    <style>
+        #container {
+            display: flex;
+            justify-content: space-between;
+            height: 785px;
+        }
+    </style>
+    <script>
+        // Set dimensions and margins
+        const margin = { top: 10, right: 30, bottom: 30, left: 60 },
+            width = 1200 - margin.left - margin.right,
+            height = 785 - margin.top - margin.bottom;
+
+        // Append SVG object
+        const svg = d3.select("#container")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+        // Read data
+        d3.json('http://localhost/foodee/index.php').then(function (data) {
+
+            console.log(data);
+
+            // X and Y axis
+
+            // Add X axis
+            const x = d3.scaleLinear()
+                .domain([0, 1800])
+                .range([0, width]);
+            svg.append("g")
+                .attr("transform", `translate(0, ${height})`)
+                .call(d3.axisBottom(x));
+
+            // Add Y axis
+            const sortedTimes = ['60', '90', '100', '120', '150', ''];
+            const y = d3.scaleBand()
+                .range([0, height])
+                .domain(sortedTimes);
+
+            svg.append("g")
+                .call(d3.axisLeft(y).tickSize(0).tickPadding(10)) // 設置 tickSize 為 0 以移除刻度線並增加數字標籤與 Y 軸的距離
+
+            // Add horizontal grid lines
+            svg.append("g")
+                .attr("class", "grid")
+                .selectAll("line")
+                .data(sortedTimes)
+                .enter()
+                .append("line")
+                .attr("x1", 0)
+                .attr("x2", width)
+                .attr("y1", d => y(d))
+                .attr("y2", d => y(d))
+                .attr("stroke", "lightgrey")
+                .attr("stroke-dasharray", "2,2");
+
+            // inner part (image)
+
+            const innerRadius = 45;
+            // Function to set images to fill the circle
+            const createPattern = (id, url) => {
+                return svg.select('defs').append('pattern')
+                    .attr('id', id)
+                    .attr('patternUnits', 'objectBoundingBox')
+                    .attr('width', 1)
+                    .attr('height', 1)
+                    .append('image')
+                    .attr('xlink:href', url)
+                    .attr('width', 2 * innerRadius)
+                    .attr('height', 2 * innerRadius)
+                    .attr('preserveAspectRatio', 'xMidYMid slice')
+                    .attr('x', 0)
+                    .attr('y', 0);
+            };
+
+            // Add Circles
+            svg.append('defs'); // Ensure <defs> is present
+
+            data.forEach((d, i) => {
+                const patternId = `pattern-${i}`;
+                createPattern(patternId, d.r_photo_env1);
+            });
+
+            const circles = svg.append('g')
+                .selectAll("circle")
+                .data(data)
+                .enter()
+                .append("g")
+                .attr("transform", d => `translate(${x(d.r_price_low)}, ${y(d.r_time_low) + y.bandwidth() / 2})`);
+
+            circles.append("circle")
+                .attr("r", innerRadius)
+                .style("fill", d => `url(#pattern-${data.indexOf(d)})`); // Change image based on data
+
+            // outer part (open hours & atmosphere)
+
+            const radius = 60;
+            const leftData = [1, 1];
+            const rightData = [1, 1, 1, 1, 1, 1, 1];
+            const color = d3.scaleOrdinal()
+                .range(["#FFF5EE", "#FFF5EE"]);
+            const dayColor = d3.scaleOrdinal()
+                .range(["lightgrey", "#FFF0AC", "#FFD400", "#FFF0AC", "#FFF0AC", "#FFD400", "#FFD400"]);
+            const leftPie = d3.pie()
+                .startAngle(-Math.PI)
+                .endAngle(0)
+                .value(d => d);
+            const leftDataReady = leftPie(leftData);
+            const rightPie = d3.pie()
+                .startAngle(0)
+                .endAngle(Math.PI)
+                .value(d => d);
+            const rightDataReady = rightPie(rightData);
+            const arc = d3.arc()
+                .innerRadius(innerRadius)
+                .outerRadius(radius)
+                .cornerRadius(2);
+
+            // Build the pie chart for the left half
+            circles.selectAll('path.left')
+                .data(leftDataReady)
+                .enter()
+                .append('path')
+                .attr('class', 'left')
+                .attr('d', d3.arc()
+                    .innerRadius(innerRadius)
+                    .outerRadius(radius)
+                    .cornerRadius(2)
+                )
+                .attr('fill', (d, i) => color(i))
+                .attr("stroke", "white")
+                .style("stroke-width", "1px");
+
+            // Build the pie chart for the right half
+            circles.selectAll('path.right')
+                .data(rightDataReady)
+                .enter()
+                .append('path')
+                .attr('class', 'right')
+                .attr('d', d3.arc()
+                    .innerRadius(innerRadius)
+                    .outerRadius(radius)
+                    .cornerRadius(2)
+                )
+                .attr('fill', (d, i) => dayColor(i))
+                .attr("stroke", "white")
+                .style("stroke-width", "1px");
+
+            // Add text labels for days
+            const days = ["M", "T", "W", "T", "F", "S", "S"];
+            circles.selectAll('text.days')
+                .data(rightDataReady)
+                .enter()
+                .append('text')
+                .attr('class', 'days')
+                .attr('transform', d => {
+                    const pos = d3.arc().innerRadius((radius + innerRadius) / 2).outerRadius((radius + innerRadius) / 2).centroid(d);
+                    return `translate(${pos[0]},${pos[1]})`;
+                })
+                .attr('text-anchor', 'middle')
+                .attr('dy', '0.35em')
+                .attr('font-size', '10px')
+                .attr('font-weight', 'bold')
+                .text((d, i) => days[i]);
+
+            // add bubbles outside the outer part
+            const smallCircleRadius = 7;
+            const iconOffset = innerRadius + (radius - innerRadius) / 2;
+            const atmosOffset = radius + 10;
+
+            // Add star icon and score in the top-left quadrant
+            circles.append("text")
+                .attr("x", Math.cos(-Math.PI / 1.2) * iconOffset)
+                .attr("y", Math.sin(-Math.PI / 1.2) * iconOffset)
+                .attr("text-anchor", "middle")
+                .attr("alignment-baseline", "middle")
+                .attr("font-size", "13px")
+                .attr("class", "fas fa-star")
+                .attr("fill", "#FFD400")
+                .text('\uf005'); // Font Awesome - star (Unicode)
+
+            // Add score
+            circles.append('text')
+                .attr('x', Math.cos(-Math.PI / 1.35) * iconOffset + 1.25) // adjust the position
+                .attr('y', Math.sin(-Math.PI / 1.35) * iconOffset + 1.25)
+                .attr('text-anchor', 'middle')
+                .attr('alignment-baseline', 'middle')
+                .attr('font-size', '12px')
+                .attr('font-weight', 'bold')
+                .text(function (d) { return d.r_rating; });
+
+            // Add parking icon in the bottom-left quadrant
+            circles.append("text")
+                .attr("x", Math.cos(Math.PI / 1.5) * iconOffset)
+                .attr("y", Math.sin(Math.PI / 1.5) * iconOffset)
+                .attr("text-anchor", "middle")
+                .attr("alignment-baseline", "middle")
+                .attr("font-size", "13px")
+                .attr("class", "fas fa-parking")
+                .attr('fill', d => {
+                    if (d.r_has_parking == 1) {
+                        return 'blue'; // If there is parking, set color to blue
+                    } else {
+                        return 'grey'; // If there is no parking, set color to light grey
+                    }
+                })
+                .text('\uf540'); // Font Awesome - parking (Unicode)
+
+            // Add bubble to show the atmosphere
+            const atmosColor = d3.scaleOrdinal(d3.schemeSet3);
+            const numCircles = 10;
+            const angleStep = (Math.PI) / numCircles;
+
+            for (let i = 0; i < numCircles; i++) {
+                const angle = i * angleStep + Math.PI / 2; // Adjust angle to start from 90 degrees
+                circles.append('circle')
+                    .attr('cx', Math.cos(angle) * atmosOffset)
+                    .attr('cy', Math.sin(angle) * atmosOffset)
+                    .attr('r', smallCircleRadius)
+                    .attr('fill', atmosColor(i)); // Correctly call atmosColor function
+            }
+
+
+
+        });
+    </script>
+
+</body>
+
+</html>

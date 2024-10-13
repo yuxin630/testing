@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combined Visualization with Icons</title>
+    <!-- Load d3.js -->
+    <script src="https://d3js.org/d3.v6.js"></script>
+    <script src="rating.js"></script>
+    <!-- Font awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="test.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="box2">
+            <div class="button-title">
+                <label>照片切換</label>
+            </div>
+            <div class="btn">
+                <button id="environment">環境</button>
+                <button id="food">食物</button>
+            </div>
+            <div class="btn">
+                <button id="hide">隱藏外圈</button>
+            </div>
+        </div>
+        <div class="box3"></div>
+        <div class="box4" id="box4">
+            <div class="box4-header">拖移餐廳看更多餐廳資訊 已選0間餐廳</div>
+            <div id="popup-content">
+                <button id="left-arrow" style="display: none;">←</button>
+                <div class="btn">
+                    <button id="clear-btn">清除全部</button>
+                </div>
+                <!-- show the detailed info of restaurants -->
+                <div id="restaurant-info-wrapper">                   
+                    <div id="restaurant-info">
+                        <p id="defaultText">尚未加入任何餐廳</p>
+                    </div>
+                </div>
+                <div class="btn">
+                    <button id="compare-btn">去比較(0/3)</button>
+                </div>
+                <button id="right-arrow" style="display: none;">→</button>
+            </div>
+        </div>
+    </div>
+    <script src="drag.js"></script>
+    <script src="change_photo.js"></script>
+    <script src="hide.js"></script>
+
+
+    <script>
+        d3.json('http://localhost/foodee/connect_sql/index2.php').then(function (data) {
+
+            //console.log(data);
+
+            // Set dimensions and margins
+            const margin = { top: 10, right: 30, bottom: 30, left: 30 },
+                width = 1180 - margin.left - margin.right,
+                height = 640 - margin.top - margin.bottom;
+
+            // Append SVG object
+            const svg = d3.select(".container")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+            // X and Y axis
+
+            // Add X axis
+            const x = d3.scaleLinear()
+                .domain([0, 1800])
+                .range([0, width]);
+            svg.append("g")
+                .attr("transform", `translate(0, ${height})`)
+                .call(d3.axisBottom(x));
+
+            // Add Y axis
+            const sortedTimes = ['60', '90', '100', '120', '150', ''];
+            const y = d3.scaleBand()
+                .range([0, height])
+                .domain(sortedTimes);
+            svg.append("g")
+                .call(d3.axisLeft(y).tickSize(0).tickPadding(10));
+
+            // Add horizontal grid lines
+            svg.append("g")
+                .attr("class", "grid")
+                .selectAll("line")
+                .data(sortedTimes)
+                .enter()
+                .append("line")
+                .attr("x1", 0)
+                .attr("x2", width)
+                .attr("y1", d => y(d))
+                .attr("y2", d => y(d))
+                .attr("stroke", "lightgrey")
+                .attr("stroke-dasharray", "2,2");
+
+            // inner part (image)
+
+            // Generate patterns
+            data.forEach((d, i) => {
+                svg.append("pattern")
+                    .attr("id", `pattern-${i}`)
+                    .attr("patternUnits", "objectBoundingBox")
+                    .attr("width", 1)
+                    .attr("height", 1)
+                    .append("image")
+                    .attr("xlink:href", d.r_photo_food1)
+                    .attr("width", 70)
+                    .attr("height", 70)
+                    .attr("preserveAspectRatio", "xMidYMid slice");
+            });
+
+            // Circles visualization
+            const circles = svg.selectAll("g.circle-group")
+                .data(data)
+                .enter()
+                .append("g")
+                .attr("class", "circle-group")
+                .attr("transform", d => `translate(${x(d.r_price_low)}, ${y(d.r_time_low) + y.bandwidth() / 2})`)
+
+            dragElement(circles, x, y);
+
+            // Add inner circle with image pattern
+            const innerRadius = 35;
+            circles.append("circle")
+                .attr("r", innerRadius)
+                .style("fill", (d, i) => `url(#pattern-${i})`);
+
+            // Add pie charts (left and right)
+            const radius = 50;
+            const leftData = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+            const rightData = [1, 1, 1, 1, 1, 1, 1];
+            const color = d3.scaleOrdinal(d3.schemeSet3);
+            const dayColor = d3.scaleOrdinal().range(["lightgrey", "#FFF0AC", "#FFD400", "#FFF0AC", "#FFF0AC", "#FFD400", "#FFD400", "#FFF0AC"]);
+
+            const arc = d3.arc().innerRadius(innerRadius).outerRadius(radius).cornerRadius(2);
+
+            circles.selectAll("path.left")
+                .data(d3.pie().startAngle(-Math.PI).endAngle(0).value(d => d)(leftData))
+                .enter()
+                .append("path")
+                .attr("class", "left")
+                .attr("d", arc)
+                .attr("fill", (d, i) => color(i))
+                .attr("stroke", "white")
+                .style("stroke-width", "1px");
+
+            circles.selectAll("path.right")
+                .data(d3.pie().startAngle(0).endAngle(Math.PI).value(d => d)(rightData))
+                .enter()
+                .append("path")
+                .attr("class", "right")
+                .attr("d", arc)
+                .attr("fill", (d, i) => dayColor(i))
+                .attr("stroke", "white")
+                .style("stroke-width", "1px");
+
+            // Add small bubbles outside the outer part
+            const smallCircleRadius = 10;
+            const iconOffset = radius + smallCircleRadius + 2;
+
+            // Add star icon
+            circles.append('circle')
+                .attr('class', 'small-circle') // Add class for hiding/showing
+                .attr('cx', Math.cos(-Math.PI / 5) * iconOffset)
+                .attr('cy', Math.sin(-Math.PI / 5) * iconOffset)
+                .attr('r', smallCircleRadius)
+                .attr('fill', 'white')
+                .attr('stroke', 'black')
+                .attr('stroke-width', '1px');
+
+            // Add star icon
+            circles.append("text")
+                .attr("class", "icon-text") // Add class for hiding/showing
+                .attr("x", Math.cos(-Math.PI / 5) * iconOffset)
+                .attr("y", Math.sin(-Math.PI / 5) * iconOffset)
+                .attr("text-anchor", "middle")
+                .attr("alignment-baseline", "middle")
+                .attr("font-size", "15px")
+                .attr("fill", "#FFD400")
+                .text('\uf005') // Font Awesome - star (Unicode)
+                .style("font-family", "FontAwesome"); // Ensure font-family is set
+
+            // Add score
+            circles.append('text')
+                .attr('class', 'icon-text') // Add class for hiding/showing
+                .attr('x', Math.cos(-Math.PI / 5) * iconOffset)
+                .attr('y', Math.sin(-Math.PI / 5) * iconOffset) // Adjust position below the star
+                .attr('text-anchor', 'middle')
+                .attr('alignment-baseline', 'middle')
+                .attr('font-size', '13px')
+                .attr('font-weight', 'bold')
+                .text(function (d) { return d.r_rating; });
+
+            // Add parking icon
+            circles.append('circle')
+                .attr('class', 'small-circle') // Add class for hiding/showing
+                .attr('cx', Math.cos(-Math.PI / 4 + 0.5) * iconOffset)
+                .attr('cy', Math.sin(-Math.PI / 4 + 0.5) * iconOffset)
+                .attr('r', smallCircleRadius)
+                .attr('fill', 'white')
+                .attr('stroke', 'black')
+                .attr('stroke-width', '1px');
+
+            // Add parking icon
+            circles.append("text")
+                .attr("class", "icon-text") // Add class for hiding/showing
+                .attr("x", Math.cos(-Math.PI / 4 + 0.5) * iconOffset)
+                .attr("y", Math.sin(-Math.PI / 4 + 0.5) * iconOffset)
+                .attr("text-anchor", "middle")
+                .attr("alignment-baseline", "middle")
+                .attr("font-size", "15px")
+                .attr("fill", d => d.r_has_parking == 1 ? 'blue' : 'lightgrey') // Conditional color based on parking availability
+                .text('\uf540') // Font Awesome - parking (Unicode)
+                .style("font-family", "FontAwesome"); // Ensure font-family is set
+
+            // Toggle box4 on click
+            document.querySelector(".box4-header").addEventListener("click", function () {
+                box4.classList.toggle("expanded");
+            });
+
+            // Change Photo
+            // 按鈕事件傳入 data 和 svg
+            document.getElementById("environment").addEventListener("click", function () {
+                updatePatterns("environment", data, svg);
+            });
+
+            document.getElementById("food").addEventListener("click", function () {
+                updatePatterns("food", data, svg);
+            });
+
+
+        });
+    </script>
+</body>
+
+</html>

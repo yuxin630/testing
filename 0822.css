@@ -1,0 +1,727 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    height: 100%;
+}
+.container {
+    display: flex;
+    height: 100vh;
+    max-width: 1366px;
+    margin-left: 10px;
+    padding-top: 10px;
+    align-items: flex-start;
+}
+
+.gallery-container {
+    width: 43%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    margin-left: 1%;
+}
+.gallery-section {
+    width: 45%;
+    margin-bottom: 7px;
+    position: relative;
+}
+
+.restaurant-name {
+    display:flex;
+    align-items:start;
+    width: auto; /* 確保寬度不超過名稱的範圍 */
+    padding: 10px; /* 適當增加內部間距 */
+    max-width: 100%; /* 確保名稱不超過容器寬度 */
+    margin: auto;
+    text-align: center;
+    border-radius: 15px;
+}
+
+.vibe-tags, .food-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; /* 控制標籤間距 */
+    margin-bottom: 10px;
+    margin-left: 0px;
+    cursor: default;
+}
+.restaurant-tag, .price-tag {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 5px;
+    background-color: #eee;
+    border-radius: 5px;
+    font-size: 0.8em;
+    color: #333;
+    white-space: nowrap; /* 防止文字換行 */
+    overflow: hidden; /* 隱藏超出部分 */
+    text-overflow: ellipsis; /* 當文字超出時顯示省略號 */
+    cursor: pointer;
+}
+.image-container {
+    position: relative;
+    width: 100%;
+    /* height: 3%; */
+    padding-top: 56.25%; /* Adjusted aspect ratio */
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+.image-container img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+.image-container img.active {
+    opacity: 1;
+}
+.nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 24px;
+    color: white;
+    text-shadow: 0px 0px 5px black;
+    z-index: 2;
+}
+.prev {
+    left: 10px;
+}
+.next {
+    right: 10px;
+}
+.info-container {
+    width: 50%;
+    padding-left: 20px;
+    /*box-sizing: border-box;*/
+}
+/* Modal styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1001;
+    padding-top: 50px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    background-color: rgba(0, 0, 0, 0.9);
+}
+.modal-content {
+    margin: auto;
+    display: block;
+    width: 80%;
+    max-width: 700px;
+    position: relative;
+}
+.modal-content img {
+    width: 100%;
+    height: auto;
+}
+.modal-close, .modal-prev, .modal-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 40px;
+    color: #fff;
+    cursor: pointer;
+    text-shadow: 0px 0px 5px black;
+}
+.modal-close {
+    top: 15px;
+    right: 35px;
+    transform: translate(0, 0);
+}
+.modal-prev {
+    left: 10px;
+}
+.modal-next {
+    right: 10px;
+}
+h3 {
+    margin: 10px;
+}
+.price-range {
+    margin-top: 10px;
+    font-size: 1em;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 5px;
+    background-color: #eee;
+    border-radius: 5px;
+}
+.collapsible {
+    background-color: #eee;
+    color: #444;
+    cursor: pointer;
+    padding: 10px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 15px;
+    position: relative;
+    z-index: 1;
+}
+.content {
+    padding: 0 18px;
+    display: none;
+    overflow: hidden;
+    background-color: #f9f9f9;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    width: 100%;
+    box-shadow: 0 -8px 16px rgba(0,0,0,0.3);
+    max-height: 0;
+    transition: max-height 0.5s ease-out, padding 0.5s ease-out;
+}
+.content.show {
+    width: -webkit-fill-available;
+    display: block;
+    border-radius: 15px;
+    max-height: 500px; /* or any value you find appropriate */
+    padding: 10px 18px;
+    transition: max-height 0.5s ease-in, padding 0.5s ease-in;
+}
+.collapsible-comments {
+    position: relative;
+    z-index: 4;
+}
+.comments-button {
+    display: flex;
+    justify-content: center; /* 水平居中 */
+    background-color: #444;
+    opacity: 0.8;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    z-index: 5;
+    /* position: relative; */
+    width: 100%;
+    border-radius: 15px;
+    margin-top: 10px;
+}
+.comments-button:hover {
+    background-color: #444;
+    opacity: 1;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    z-index: 5;
+    position: relative;
+    width: 100%;
+    border-radius: 15px;
+    margin-top: 10px;
+}
+
+.slide-down {
+    animation: slideDown 0.5s forwards;
+}
+.slide-up {
+    animation: slideUp 0.5s forwards;
+}
+@keyframes slideDown {
+    from { max-height: 0; opacity: 0; }
+    to { max-height: 500px; opacity: 1; }
+}
+@keyframes slideUp {
+    from { max-height: 500px; opacity: 1; }
+    to { max-height: 0; opacity: 0; }
+}
+.nav-arrow {
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+    width: auto;
+    padding: 16px;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    transition: 0.6s ease;
+    border-radius: 0 3px 3px 0;
+    user-select: none;
+}
+.nav-arrow.prev {
+    left: 0;
+}
+.nav-arrow.next {
+    right: 0;
+    border-radius: 3px 0 0 3px;
+}
+.nav-arrow:hover {
+    background-color: rgba(0,0,0,0.8);
+}
+.comment-section {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    z-index: 4;
+}
+
+.upper-section{
+    background-color: #f0f0f0;
+    border-radius: 15px;
+    padding-left: 10%;
+    margin-bottom: 10px;
+    padding-top: 2%;
+}
+/* 雷達圖跟營業時間位置 */
+.middle-section {
+    background-color: #f0f0f0; /* 您可以根据需要更改颜色 */
+    border-radius: 15px;
+    padding: 10px; /* 可选的内边距，以便内容不会紧贴边框 */
+    padding-right: 30px;
+    margin-bottom: 10px; /* 可选的外边距，以便 div 之间有间距 */
+    display: flex;
+    justify-content: center; /* 水平居中 */
+    height: 35%; /* 使父容器占據整個可用高度 */
+}
+
+.middle-section1, .middle-section2 {
+    flex: 0 1 auto; /* 根據內容自適應寬度 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+.middle-section1{
+    margin-left: 70px;
+}
+
+#map {
+    position: relative; /* 确保按钮可以相对地图定位 */
+    border-radius: 15px; /* 地图边框的圆角 */
+    height: 100%; /* 确保地图占满父容器 */
+    z-index: 0;
+    /* margin-bottom: 10px; */
+}
+
+.map-button {   
+    background-color: #F8EDE3;
+    border-radius: 15px;
+    color: #3B3B3B;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 15px;
+    width: auto; /* 自适应宽度 */
+    /* margin: 5px; */
+    z-index: 1001; /* 确保按钮在地图的上方 */
+    cursor: pointer;
+    /* font-family: Roobert, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; */
+    text-align: center;
+    transition: all 300ms cubic-bezier(.23, 1, 0.32, 1);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+#shareButton {
+    margin-right: 0px; /* 与BACK按钮之间的间距 */
+}
+
+.map-button:hover {
+    background-color: #E0D4C2;
+    box-shadow: rgba(0, 0, 0, 0.25) 0 8px 15px;
+    transform: translateY(-2px);
+}
+
+.map-button:active {
+    box-shadow: none;
+    transform: translateY(0);
+}
+
+
+
+/*share panel */
+#sharePanel {
+    display:none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 900px;
+    background-color: white;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+    z-index: 1001; /* 确保面板在模糊效果上方 */
+    padding: 20px 20px 0 20px;
+    border-radius: 10px;
+    overflow-y: hidden; /* 默认隐藏滚动条 */
+    overflow-x: hidden;
+    transition: height 0.3s ease-in-out; /* 平滑过渡效果 */
+    display: flex;
+    flex-direction: row;
+}
+.blur-background {
+    filter: blur(5px);
+    opacity: 0.5;
+    /* transition: filter 0.3s, opacity 0.3s;  */
+}
+
+#share-content {
+    margin-bottom: 20px;
+}
+
+.restaurant-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.1); /* 背景颜色会根据前面一页动态设置 */
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.restaurant-title input {
+    flex-grow: 1;
+    margin-left: 10px;
+}
+
+.button-group {
+    display: flex;
+    flex-direction: column;
+    margin-right: 20px; /* 确保按钮与右侧标签之间有空间 */
+    /* align-items: flex-start; */
+}
+
+.button-group button {
+    background-color: #eee;
+    border: none;
+    padding: 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.panel-buttons {
+    position: relative;
+    left: 800px;
+    bottom: 10px;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+/* #sharePanel img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+} */
+
+/* 将整个内容排列为两列布局 */
+.restaurant-item {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+.left-column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.middle-column {
+    display: flex;
+    flex-direction: column;
+    margin-left: 20px;
+}
+
+.right-column{
+    display: flex;
+    flex-direction: column;
+    margin-left: 30px;
+}
+
+/* 所有按鈕和tag样式 */
+button {
+    border: none;
+    background: none;
+    padding: 5px;
+    cursor: pointer;
+    display: inline-grid;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    font-weight:bold;
+}
+
+/* button svg {
+    fill: currentColor;
+} */
+
+/* 左邊button內容 */
+/* 价钱按钮和用餐时间按钮特定样式 */
+.price-button, .dining-time-button {
+    background-color: #eee;
+    border-radius: 5px;
+    padding: 5px 10px;
+    margin-bottom: 5px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.price-button:hover, .dining-time-button:hover, .parking-button:hover {
+    background-color: #F4DEB3;
+}
+
+/* parking */
+.parking-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px 10px 20px;
+    background-color: #eee; /* 默认背景颜色 */
+    border-radius: 8px; /* 圆角矩形 */
+    cursor: pointer;
+    border: none; /* 去除默认边框 */
+}
+
+.parking-button svg {
+    margin-right: 5px; /* 控制 SVG 与按钮文字的距离 */
+}
+
+/* 高亮状态下的停车场按钮 */
+.parking-button.highlighted {
+    background-color: #F4DEB3; /* 高亮时的背景颜色 */
+}
+
+/* share panel 中間內容 */
+.vis-pic {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+}
+
+
+.vis-button {
+    margin-top: 10px;
+    width: min-content;
+    background-color: #eee;
+    border: none;
+    cursor: pointer;
+    margin-right: 10px;
+    border-radius: 15px;
+}
+
+.vis-button img {
+    width: 100px;
+    object-fit: contain; /* 保持图片比例 */
+    border-radius: 15px;
+    transition: transform 0.2s ease; /* 加入点击动画 */
+}
+
+.vis-button:hover img {
+    transform: scale(1.1); /* 鼠标悬停时放大 */
+    background-color: #F4DEB3;
+}
+
+.restaurant-tag-share{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 5px;
+    background-color: #eee;
+    border-radius: 5px;
+    font-size: 0.8em;
+    color: #333;
+    white-space: nowrap; /* 防止文字換行 */
+    overflow: hidden; /* 隱藏超出部分 */
+    text-overflow: ellipsis; /* 當文字超出時顯示省略號 */
+    cursor: pointer;
+}
+
+.restaurant-tag-share:hover {
+    /* background-color: #ddd; */
+    background-color: #F4DEB3;
+}
+
+.restaurant-tag-share.selected {
+    background-color: #F4DEB3;
+}
+
+/* 氣氛、食物title */
+.tags-container {
+    display: flex;
+    flex-direction: column;
+    margin-left: 20px;
+}
+
+/* 3. 气氛和食物标签组的样式 */
+.vibe-tags-share, .food-tags-share {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 5px; /* 增加标题和标签之间的距离 */
+    margin-left:10px;
+}
+
+/* 标题样式 */
+.tag-title {
+    display: flex;
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+/* share panel 右邊內容 */
+/* 新增图片按钮和展示区的样式 */
+/* 新增图片按钮和展示区的样式 */
+.image-button-group {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    /* margin-left:20px; */
+}
+/* #f7c99d */
+.image-toggle-button {
+    background-color: #ddd;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.image-toggle-button.selected {
+    background-color: #ccc;
+}
+
+.image-toggle-button:hover {
+    background-color: #ccc;
+}
+
+.image-display-container {
+    width: 230px;
+    height: 150px;
+    margin: 0 auto;
+    position: relative;
+    overflow: visible; /* 允许子元素溢出 */
+}
+
+.displayed-img {
+    width: 100%;
+    height: auto;
+    max-height: 100%;
+    object-fit: cover;
+    border-radius: 15px;
+}
+
+.image-container-share {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 20px;
+    color: white;
+    text-shadow: 0px 0px 5px black;
+    z-index: 2;
+}
+
+.prev {
+    left: 5px;
+}
+
+.next {
+    right: 10px;
+}
+
+/* share back button */
+.share-button{
+    position: relative;
+    bottom: 10px;
+    right: 25px;
+    background-color: #F8EDE3;
+    border-radius: 15px;
+    color: #3B3B3B;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 15px;
+    width: auto; /* 自适应宽度 */
+    /* margin: 5px; */
+    z-index: 1001; /* 确保按钮在地图的上方 */
+    cursor: pointer;
+    /* font-family: Roobert, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; */
+    text-align: center;
+    transition: all 300ms cubic-bezier(.23, 1, 0.32, 1);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+#closePanelButton {
+    margin-right: 0px; /* 与BACK按钮之间的间距 */
+}
+
+.share-button:hover {
+    background-color: #E0D4C2;
+    box-shadow: rgba(0, 0, 0, 0.25) 0 8px 15px;
+    transform: translateY(-2px);
+}
+
+.share-button:active {
+    box-shadow: none;
+    transform: translateY(0);
+}
+/* Add & delet SVG */
+.corner-svg {
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+    z-index: 1001;
+}
+
+.corner-svg svg {
+    width: 100%;
+    height: 100%;
+    transition: fill 0.2s ease;
+}
+
+.image-container-share.highlighted .corner-svg svg {
+    fill: #F4DEB3;
+}
+
+.image-toggle-button {
+    background-color: #ddd;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.image-toggle-button.selected {
+    background-color: #ccc;
+}
+
+.image-toggle-button:hover {
+    background-color: #ccc;
+}
+.button_container{
+    margin-top: 2%;
+    display: flex;
+    justify-content: flex-end;
+}
+

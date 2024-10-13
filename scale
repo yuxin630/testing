@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="scale_css">
+</head>
+<body>
+    <div id="chart"></div>
+    <div class="x-axis-container">
+        <svg id="x-axis-svg" width="1200" height="50"></svg>
+    </div>
+    <div class="jump-buttons">
+        <div class="jump-button" onclick="jumpToDiningTime(0)">0 分鐘</div>
+        <div class="jump-button" onclick="jumpToDiningTime(60)">60 分鐘</div>
+        <div class="jump-button" onclick="jumpToDiningTime(90)">90 分鐘</div>
+        <div class="jump-button" onclick="jumpToDiningTime(120)">120 分鐘</div>
+        <div class="jump-button" onclick="jumpToDiningTime(150)">150 分鐘</div>
+        <div class="jump-button" onclick="jumpToDiningTime(9999)">9999 分鐘</div>
+    </div>
+    <div class="minimap-container">
+        <svg id="minimap" width="200" height="100"></svg>
+    </div>
+    <script>
+// 將原本的靜態資料替換為 d3.json 方法讀取 JSON 數據
+d3.json('/index.json').then(function (data) {
+    const width = 1200;
+    const margin = { top: 20, right: 50, bottom: 50, left: 40 };
+    const circleRadius = 60;
+    const circleSpacing = 10;
+    const rowHeight = circleRadius * 2 + circleSpacing;
+    const groupSpacing = 30;
+
+    const intervals = ["區間200", "區間400", "區間600", "區間800", "區間1000"];
+    let currentIntervals = ["區間200", "區間400", "區間600"];
+
+    const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+    function getCurrentIntervalTotals(intervals) {
+        const intervalTotals = {};
+        intervals.forEach(interval => {
+            intervalTotals[interval] = d3.sum(data, d => d[interval]);
+        });
+        return intervalTotals;
+    }
+
+    function updateIntervals() {
+        if (!currentIntervals || currentIntervals.length === 0) {
+            console.warn("currentIntervals 为空或未定义，跳过更新。");
+            return;
+        }
+
+        const intervalTotals = getCurrentIntervalTotals(currentIntervals);
+        const total = d3.sum(Object.values(intervalTotals));
+
+        if (isNaN(total) || total === 0) {
+            console.warn("Total 餐厅数为 NaN 或 0，跳过更新。");
+            return;
+        }
+
+        const intervalWidths = {};
+        currentIntervals.forEach(interval => {
+            intervalWidths[interval] = (intervalTotals[interval] / total) * (width - margin.left - margin.right);
+        });
+
+        const intervalPositions = {};
+        let currentPosition = margin.left;
+        currentIntervals.forEach(interval => {
+            intervalPositions[interval] = currentPosition;
+            currentPosition += intervalWidths[interval];
+        });
+
+        d3.select("#chart").selectAll("*").remove();
+        d3.select("#x-axis-svg").selectAll("*").remove();
+
+        const totalHeight = calculateTotalHeight(data, intervalWidths, rowHeight, groupSpacing, margin);
+        if (isNaN(totalHeight) || totalHeight === 0) {
+            console.error("Total height 计算失败，跳过绘图。");
+            return;
+        }
+
+        drawChart(intervalWidths, intervalPositions, total, totalHeight);
+        drawMinimap(intervalPositions, totalHeight, intervalWidths);
+    }
+
+    // 其他功能的實現 (如 drawChart, drawMinimap, calculateTotalHeight, calculatePositions, jumpToDiningTime 等)
+
+    updateIntervals();
+});
+
+
+
+function drawChart(intervalWidths, intervalPositions, total, totalHeight) {
+    if (isNaN(totalHeight) || totalHeight <= 0) {
+        console.error("Invalid total height:", totalHeight);
+        return;
+    }
+
+    const svg = d3.select("#chart")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", totalHeight);
+
+    // 創建圖片填充的圖案模式
+    const innerRadius = 45;
+    const createPattern = (id, url) => {
+        return svg.select('defs').append('pattern')
+            .attr('id', id)
+            .attr('patternUnits', 'objectBoundingBox')
+            .attr('width', 1)
+            .attr('height', 1)
+            .append('image')
+            .attr('xlink:href', url)
+            .attr('width', 2 * innerRadius)
+            .attr('height', 2 * innerRadius)
+            .attr('preserveAspectRatio', 'xMidYMid slice')
+            .attr('x', 0)
+            .attr('y', 0);
+    };
+
+    svg.append('defs'); // 確保 <defs> 存在
+
+    data.forEach((d, i) => {
+        const patternId = `pattern-${i}`;
+        createPattern(patternId, d.r_photo_env1);
+    });
+
+    const positions = calculatePositions(data, intervalWidths, rowHeight, circleSpacing, margin, intervalPositions);
+
+    svg.append("g")
+        .selectAll("rect")
+        .data(positions.filter(d => d.border))
+        .enter()
+        .append("rect")
+        .attr("x", d => d.x)
+        .attr("y", d => isNaN(d.y) ? 0 : d.y)
+        .attr("width", d => d.width)
+        .attr("height", d => isNaN(d.height) || d.height < 0 ? 0 : d.height)
+        .attr("class", "border");
+
+    // 添加間隔分隔線
+    svg.append("g")
+        .selectAll(".interval-separator")
+        .data(Object.keys(intervalWidths))
+        .enter()
+        .append("line")
+        .attr("class", "interval-separator")
+        .attr("x1", d => intervalPositions[d] + intervalWidths[d])
+        .attr("y1", margin.top)
+        .attr("x2", d => intervalPositions[d] + intervalWidths[d])
+        .attr("y2", totalHeight - margin.bottom)
+        .attr("stroke", "black")
+        .attr("stroke-width", 1); // 調整厚度
+
+    // 添加圈圈圖形
+    const circles = svg.append('g')
+        .selectAll("circle")
+        .data(data)
+        .enter()
+        .append("g")
+        .attr("transform", d => `translate(${intervalPositions[d.key]}, ${margin.top})`);
+
+    circles.append("circle")
+        .attr("r", innerRadius)
+        .style("fill", d => `url(#pattern-${data.indexOf(d)})`); // 根據數據改變圖片
+
+    // 外圍部分（開放時間和氛圍）
+    const radius = 60;
+    const leftData = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+    const rightData = [1, 1, 1, 1, 1, 1, 1];
+    const color = d3.scaleOrdinal(d3.schemeSet3);
+    const dayColor = d3.scaleOrdinal()
+        .range(["lightgrey", "#FFF0AC", "#FFD400", "#FFF0AC", "#FFF0AC", "#FFD400", "#FFD400", "#FFF0AC"]);
+    const leftPie = d3.pie()
+        .startAngle(-Math.PI)
+        .endAngle(0)
+        .value(d => d);
+    const leftDataReady = leftPie(leftData);
+    const rightPie = d3.pie()
+        .startAngle(0)
+        .endAngle(Math.PI)
+        .value(d => d);
+    const rightDataReady = rightPie(rightData);
+    const arc = d3.arc()
+        .innerRadius(innerRadius)
+        .outerRadius(radius)
+        .cornerRadius(2);
+
+    // 為左半部分構建餅圖
+    circles.selectAll('path.left')
+        .data(leftDataReady)
+        .enter()
+        .append('path')
+        .attr('class', 'left')
+        .attr('d', arc)
+        .attr('fill', (d, i) => color(i))
+        .attr("stroke", "white")
+        .style("stroke-width", "1px");
+
+    // 為右半部分構建餅圖
+    circles.selectAll('path.right')
+        .data(rightDataReady)
+        .enter()
+        .append('path')
+        .attr('class', 'right')
+        .attr('d', arc)
+        .attr('fill', (d, i) => dayColor(i))
+        .attr("stroke", "white")
+        .style("stroke-width", "1px");
+
+    // 添加天數標籤
+    const days = ["M", "T", "W", "T", "F", "S", "S"];
+    circles.selectAll('text.days')
+        .data(rightDataReady)
+        .enter()
+        .append('text')
+        .attr('class', 'days')
+        .attr('transform', d => {
+            const pos = d3.arc().innerRadius((radius + innerRadius) / 2).outerRadius((radius + innerRadius) / 2).centroid(d);
+            return `translate(${pos[0]},${pos[1]})`;
+        })
+        .attr('text-anchor', 'middle')
+        .attr('dy', '0.35em')
+        .attr('font-size', '10px')
+        .attr('font-weight', 'bold')
+        .text((d, i) => days[i]);
+
+    // 添加外部圓形和圖標
+    const smallCircleRadius = 10;
+    const iconOffset = radius + smallCircleRadius + 2;
+
+    // 添加星形圖標
+    circles.append('circle')
+        .attr('cx', Math.cos(-Math.PI / 5) * iconOffset)
+        .attr('cy', Math.sin(-Math.PI / 5) * iconOffset)
+        .attr('r', smallCircleRadius)
+        .attr('fill', 'white')
+        .attr('stroke', 'black')
+        .attr('stroke-width', '1px');
+    circles.append("text")
+        .attr("x", Math.cos(-Math.PI / 5) * iconOffset)
+        .attr("y", Math.sin(-Math.PI / 5) * iconOffset)
+        .attr("text-anchor", "middle")
+        .attr("alignment-baseline", "middle")
+        .attr("font-size", "15px")
+        .attr("class", "fas fa-star")
+        .attr("fill", "#FFD400")
+        .text('\uf005'); // Font Awesome - star (Unicode)
+
+    // 添加分數
+    circles.append('text')
+        .attr('x', Math.cos(-Math.PI / 5) * iconOffset)
+        .attr('y', Math.sin(-Math.PI / 5) * iconOffset)
+        .attr('text-anchor', 'middle')
+        .attr('alignment-baseline', 'middle')
+        .attr('font-size', '7px')
+        .attr('font-weight', 'bold')
+        .text(function (d) { return d.r_rating; });
+
+    // 添加停車圖標
+    circles.append('circle')
+        .attr('cx', Math.cos(-Math.PI / 4 + 0.5) * iconOffset)
+        .attr('cy', Math.sin(-Math.PI / 4 + 0.5) * iconOffset)
+        .attr('r', smallCircleRadius)
+        .attr('fill', 'white')
+        .attr('stroke', 'black')
+        .attr('stroke-width', '1px');
+    circles.append("text")
+        .attr("x", Math.cos(-Math.PI / 4 + 0.5) * iconOffset)
+        .attr("y", Math.sin(-Math.PI / 4 + 0.51) * iconOffset)
+        .attr("text-anchor", "middle")
+        .attr("alignment-baseline", "middle")
+        .attr("font-size", "15px")
+        .attr("class", "fas fa-parking")
+        .attr('fill', d => d.r_has_parking == 1 ? 'blue' : 'lightgrey')
+        .text('\uf540'); // Font Awesome - parking (Unicode)
+
+    const xAxisSvg = d3.select("#x-axis-svg");
+    const xScale = d3.scaleLinear()
+        .domain([0, total])
+        .range([margin.left, width - margin.right]);
+
+    xAxisSvg.append("g")
+        .attr("transform", `translate(0, 0)`)
+        .call(d3.axisBottom(xScale)
+            .tickValues(Object.values(intervalPositions).map(d => xScale.invert(d)))
+            .tickFormat((d, i) => currentIntervals[i]));
+
+    // 向右移動的箭頭
+    d3.select("body").append("div")
+        .attr("class", "arrow arrow-right")
+        .text("▶")
+        .on("click", () => {
+            const nextIndex = intervals.indexOf(currentIntervals[currentIntervals.length - 1]) + 1;
+            if (nextIndex < intervals.length) {
+                currentIntervals = intervals.slice(nextIndex - 2, nextIndex + 1);
+                updateIntervals();
+            }
+        });
+
+    // 向左移動的箭頭
+    d3.select("body").append("div")
+        .attr("class", "arrow arrow-left")
+        .text("◀")
+        .on("click", () => {
+            const prevIndex = intervals.indexOf(currentIntervals[0]) - 1;
+            if (prevIndex >= 0) {
+                currentIntervals = intervals.slice(prevIndex, prevIndex + 3);
+                updateIntervals();
+            }
+        });
+}
+
+
+
+        const intervalTotals = currentIntervals.map(interval => {
+    return data.reduce((sum, d) => sum + (d[interval] || 0), 0);
+});
+
+    function drawMinimap(intervalPositions, totalHeight, intervalWidths) {
+        const minimapWidth = 200;
+        const minimapHeight = 100;
+
+        const allIntervals = ["區間200", "區間400", "區間600", "區間800", "區間1000"];
+
+        // X轴缩放比例，用于设置每个价格区间的位置
+        const scaleX = d3.scaleBand()
+            .domain(allIntervals)
+            .range([0, minimapWidth])
+            .padding(0.1);
+
+        // Y轴缩放比例，用于设置堆叠条形图的高度
+        const maxYValue = d3.max(allIntervals, interval => {
+            return data.reduce((sum, d) => sum + (d[interval] || 0), 0);
+        });
+        console.log('maxYValue:', maxYValue); // 调试 maxYValue
+
+        const scaleY = d3.scaleLinear()
+            .domain([0, maxYValue])
+            .range([minimapHeight, 0]);
+
+        // 清除之前的内容
+        d3.select("#minimap").selectAll("*").remove();
+
+        // 背景
+        d3.select("#minimap")
+            .append("rect")
+            .attr("width", minimapWidth)
+            .attr("height", minimapHeight)
+            .attr("fill", "#ddd");
+
+        // 堆叠数据生成
+        const stack = d3.stack()
+            .keys(data.map(d => d.用餐時間))
+            .value((d, key) => d[key] || 0);
+
+        const stackedData = stack(allIntervals.map(interval => {
+            return data.reduce((acc, d) => {
+                acc[d.用餐時間] = d[interval] || 0;
+                return acc;
+            }, {區間: interval});
+        }));
+
+        // 绘制堆叠条形图
+        stackedData.forEach((layer, layerIndex) => {
+            d3.select("#minimap").selectAll(`.bar-${layerIndex}`)
+                .data(layer)
+                .enter()
+                .append("rect")
+                .attr("class", `bar-${layerIndex}`)
+                .attr("x", d => scaleX(d.data.區間))
+                .attr("y", d => scaleY(d[1]))
+                .attr("width", scaleX.bandwidth())
+                .attr("height", d => scaleY(d[0]) - scaleY(d[1]))
+                .attr("fill", color(layer.key))
+                .attr("stroke", "black");
+        });
+
+        // 标示当前显示区域的矩形
+        const currentStart = currentIntervals[0];
+        const currentEnd = currentIntervals[currentIntervals.length - 1];
+        const xPositionStart = scaleX(currentStart);
+        const xPositionEnd = scaleX(currentEnd) + scaleX.bandwidth();
+
+        // 添加红色矩形边框
+        d3.select("#minimap").append("rect")
+            .attr("x", xPositionStart)
+            .attr("y", 0)
+            .attr("width", xPositionEnd - xPositionStart)
+            .attr("height", minimapHeight)
+            .attr("stroke", "red")
+            .attr("stroke-width", 2)  // 增加线条粗细
+            .attr("fill", "none");
+
+        // 降低未选中区域的透明度
+        allIntervals.forEach(interval => {
+            if (!currentIntervals.includes(interval)) {
+                d3.select("#minimap").append("rect")
+                    .attr("x", scaleX(interval))
+                    .attr("y", 0)
+                    .attr("width", scaleX.bandwidth())
+                    .attr("height", minimapHeight)
+                    .attr("fill", "white")
+                    .attr("fill-opacity", 0.5); // 设置透明度
+            }
+        });
+    }
+
+
+        function calculatePositions(data, intervalWidths, rowHeight, circleSpacing, margin, intervalPositions) {
+            const positions = [];
+            let groupYOffset = margin.top;
+
+            data.forEach(group => {
+                const groupData = currentIntervals.map(interval => ({
+                    key: interval,
+                    value: group.hasOwnProperty(interval) ? group[interval] : 0
+                }));
+
+                const maxRows = Math.max(...groupData.map(d => {
+                    const value = d.value || 0;
+                    return Math.ceil(value / Math.floor((intervalWidths[d.key] || 0) / (circleRadius * 2 + circleSpacing)));
+                }));
+                const groupHeight = maxRows * rowHeight;
+
+                positions.push({
+                    x: margin.left,
+                    y: groupYOffset,
+                    width: width - margin.left - margin.right,
+                    height: groupHeight + 20,
+                    key: '',
+                    time: group.用餐時間,
+                    border: true
+                });
+
+                groupData.forEach(d => {
+                    let xOffset = 0;
+                    let yOffset = groupYOffset;
+                    for (let i = 0; i < d.value; i++) {
+                        if (xOffset + circleRadius * 2 + circleSpacing > (intervalWidths[d.key] || 0)) {
+                            xOffset = 0;
+                            yOffset += rowHeight;
+                        }
+                        positions.push({
+                            x: intervalPositions[d.key] + xOffset,
+                            y: yOffset,
+                            key: d.key,
+                            time: group.用餐時間,
+                            label: false
+                        });
+                        xOffset += circleRadius * 2 + circleSpacing;
+                    }
+                });
+
+                positions.push({
+                    x: margin.left + width - margin.left - margin.right - 40,
+                    y: groupYOffset + 10,
+                    key: '',
+                    time: group.用餐時間,
+                    label: true
+                });
+
+                groupYOffset += groupHeight + groupSpacing + 20;
+            });
+
+            return positions;
+        }
+
+        function calculateTotalHeight(data, intervalWidths, rowHeight, groupSpacing, margin) {
+    let totalHeight = margin.top + margin.bottom;
+    
+    data.forEach(group => {
+        const groupData = currentIntervals.map(interval => ({
+            key: interval,
+            value: group.hasOwnProperty(interval) ? group[interval] : 0
+        }));
+
+        const maxRows = Math.max(...groupData.map(d => {
+            const value = d.value || 0;
+            const width = intervalWidths[d.key] || 0;
+            if (width === 0) return 0; // Ensure width is not zero
+            return Math.ceil(value / Math.floor(width / (circleRadius * 2 + circleSpacing)));
+        }));
+
+        const groupHeight = maxRows * rowHeight;
+
+        if (isNaN(groupHeight) || groupHeight < 0) {
+            console.error("Invalid groupHeight:", groupHeight);
+            return; // Skip this group if height calculation fails
+        }
+
+        totalHeight += groupHeight + groupSpacing + 20; // Adjust this based on your layout needs
+    });
+
+    if (isNaN(totalHeight) || totalHeight <= 0) {
+        console.error("Invalid total height calculated:", totalHeight);
+        return 0; // Prevent further processing with invalid height
+    }
+
+    return totalHeight;
+}
+
+
+
+        function jumpToDiningTime(diningTime) {
+            currentIntervals = ["區間200", "區間400", "區間600", "區間800", "區間1000"];
+            const matchingData = data.find(d => d.用餐時間 === diningTime);
+            if (matchingData) {
+                currentIntervals = currentIntervals.filter(interval => matchingData[interval] > 0);
+                if (currentIntervals.length === 0) {
+                    console.warn(`用餐时间 ${diningTime} 没有对应的有效区间数据`);
+                    return; // 终止函数执行
+                }
+                updateIntervals();
+            } else {
+                console.error(`未找到用餐时间 ${diningTime} 的数据`);
+            }
+        }
+
+        updateIntervals();
+    </script>
+</body>
+</html>

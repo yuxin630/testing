@@ -1,0 +1,331 @@
+.restaurant-section {
+    display: none;
+}
+.active-restaurant {
+    display: block;
+}
+#restaurant-info{
+    padding: 1rem 1rem;
+    border-radius:15px;
+    margin-top: .5rem;
+    background-color:  #fff;
+    box-shadow: 0 0 8px rgba(0, 0, 0, .15);
+}
+#toggleVoteButton{
+    border: none;
+}
+.nav-button {
+    margin: 10px;
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: #E0E0E0;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.nav-button:hover {
+    background-color: #45a049;
+}
+
+/* 圖片輪播的樣式 */
+.slideshow-container {
+    position: relative;
+    max-width: 100%;
+    margin: auto;
+}
+
+.mySlides img {
+    width: -webkit-fill-available;
+    height: 200px;
+    object-fit: cover;
+}
+
+.prev, .next {
+    cursor: pointer;
+    position: absolute;
+    top: 10%;
+    width: auto;
+    /*margin-top: -22px;*/
+    padding: 16px;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    transition: 0.6s ease;
+    border-radius: 0 3px 3px 0;
+    user-select: none;
+}
+
+.next {
+    right: 0;
+    border-radius: 3px 0 0 3px;
+}
+
+.prev:hover, .next:hover {
+    background-color: rgba(0,0,0,0.8);
+}
+
+.info {
+    margin: 5px;
+}
+
+.restaurant-name {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 10px 0px;
+}
+
+.star-rating img {
+    height: 20px;
+    vertical-align: middle;
+}
+
+.vibe-tags, .food-tags {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 5px 0 0 0;
+    font-size: 15px;
+    font-weight: normal;
+}
+
+.vibe-tags .restaurant-tag {
+    display: inline-block;
+    background-color: #f1f1f1;
+    padding: 5px;
+    margin-right: 5px;
+    border-radius: 5px;
+}
+
+.price-tag {
+    font-weight: bold;
+    color: #555;
+    margin-left: 10px;
+}
+
+.gallery-container {
+    margin: 20px 0;
+}
+
+.info-row {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+.info-row div{
+    margin: 0 5px;
+    padding: 5px;
+    border-radius: 5px;
+    background-color: #E0E0E0;
+}
+
+#map {
+    /*width: -webkit-fill-available;*/
+    height: 150px;
+}
+svg{
+    /*width: -webkit-fill-available;*/
+}
+#chat{
+    /*width: -webkit-fill-available;*/
+}
+.gallery-img {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    display: none;
+    object-fit: cover;
+    transition: opacity 0.5s ease-in-out;
+    border-radius: 5px;
+}
+.gallery-img.active {
+    display: block;
+    opacity: 1;
+}
+
+.image-container {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+}
+
+.restaurant-section {
+    display: none;
+}
+.restaurant-section.active {
+    display: block;
+}
+
+.button-container {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 5px 0;
+    justify-content: center;
+    position: relative;
+}
+
+.button-container button {
+    max-width:40%;
+    margin: 2px 5px;
+    /* width: 50px; 默认宽度 */
+    padding: 5px;
+    background-color: #f0f0f0;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: width 0.3s, background-color 0.3s, color 0.3s; /* 增加宽度的平滑过渡 */
+    text-align: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    position: relative;
+    font-size: large;
+}
+
+.restaurant-name{
+    margin: 0 5px;
+}
+
+.star-rating{
+    margin: 5px;
+}
+
+/*.button-container button:hover {
+    width: auto; /* 悬停时自动调整宽度 
+    /*color: white;
+    max-width: none; /* 防止宽度被限制 
+    z-index: 1; /* 确保悬停时按钮在其他元素上方 
+}*/
+
+.restaurant-button{
+    border: none;
+}
+
+.toggle-container {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+.toggle-button {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: #E0E0E0;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 150px;
+    text-align: center;
+}
+
+.toggle-button:hover {
+    background-color: #45a049;
+}
+
+.toggle-content {
+    display: none;
+}
+
+.toggle-content.active {
+    display: block;
+}
+.price-tag{
+    display: inline-block;
+    margin-left: 10px;
+    padding: 0 10px;
+    background-color: gray;
+}
+.parking-tag{
+    display: inline-block;
+    margin-left: 10px;
+    padding: 0 10px;
+    background-color: gray;
+}
+.upper-section{
+    margin: 10px 0;
+    border-radius:15px;
+    background-color: rgba(240, 240, 240, 0.6);
+}
+.middle-section{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    flex-wrap: wrap;
+}
+.middle-section1{
+    margin-bottom: 10px;
+    border-radius:15px;
+    background-color: rgba(240, 240, 240, 0.6);
+}
+.middle-section2{
+    border-radius:15px;
+    background-color: rgba(240, 240, 240, 0.6);
+    padding-left: 45px;
+    margin-bottom: 10px;
+    display: flex;
+    width: -webkit-fill-available;
+}
+.middle-section2 svg{
+    height:260px;
+}
+.spider{
+    width:100%;
+}
+.vote {
+    z-index: 1000;
+    border-radius: 20px;
+    padding:10px 20px;
+    background-color: rgba(198, 198, 198, 0.5);
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    position: fixed; /* 修改为fixed */
+    bottom: 5; /* 固定在视窗底部 */
+    width: 85%;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column-reverse;
+}
+.vote button{
+    /*width: 25%;*/
+    margin: 5px;
+    /* width: 50px; 默认宽度 */
+    padding: 5px;
+    background-color: #fff;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: width 0.3s, background-color 0.3s, color 0.3s; /* 增加宽度的平滑过渡 */
+    text-align: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    position: relative;
+    font-size: large;  
+    display: flex;
+    flex-direction: column;
+}
+#voteForm{
+    margin:auto 0;
+}
+#voteMessage{
+    margin:auto 0;
+}
+#chat-section{
+    margin: 5px 0;
+    padding: 0 10px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+}
+#toggleVoteButton{
+    display: flex;
+    /* text-align: justify; */
+    width: 70px;
+    align-items: center;
+}
+/* 增加 CSS 過渡效果 */
+#voteList {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.5s ease-out;
+    display: flex;
+    flex-direction: column;
+}

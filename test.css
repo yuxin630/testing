@@ -1,0 +1,351 @@
+.box3 {
+    width: 100%;
+    height: auto;
+    /* 留出 box4 的空間 */
+    background-color: white;
+}
+
+.box4 {
+    width: 100%;
+    height: 50px;
+    background-color: lightblue;
+    cursor: default;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    /*display: flex;*/
+    flex-direction: column;
+}
+
+
+
+.box4.expanded {
+    height: 80%;
+    align-items: center;
+    justify-content: center;
+}
+
+#popup-content {
+    padding: 10px;
+    background-color: white;
+    margin: 10px;
+    border-radius: 5px;
+    width: calc(100% - 20px); /* 減去左右邊距 */
+    height: calc(100% - 20px); /* 減去上下邊距 */
+    box-sizing: border-box; /* 包括邊框和內邊距在內 */
+    display: flex;
+    /* 使用 flex 佈局 */
+    flex-direction: column; /* 垂直排列 */
+    /*overflow-x: auto;*/
+    /* 讓內容超出時可橫向滾動 */
+}
+#left-arrow, #right-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%); /* 垂直居中 */
+    background-color: rgba(0, 0, 0, 0.5); /* 半透明背景 */
+    color: white;
+    border: none;
+    padding: 5px 10px 10px 10px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+#left-arrow {
+    left: 20px; /* 定位到畫面最左邊 */
+}
+
+#right-arrow {
+    right: 20px; /* 定位到畫面最右邊 */
+}
+
+.restaurant-info-wrapper{
+    display: flex;
+    align-items: flex-start;
+
+}
+#restaurant-info {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-right: 20px;
+    margin-left: 40px;
+    height: auto;
+    /* 每個餐廳資訊之間的間距 */
+}
+
+/* 每個餐廳的樣式 */
+.restaurant {
+    width: 320px;
+    padding: 0 40px 20px 40px; /* 每個餐廳之間的間距 */
+    margin-top: 20px;
+    text-align: center; /* 讓圖片和文字居中 */
+    align-items: flex-start; 
+    position: relative; /* 為了讓 delete-restaurant 定位相對於餐廳 */
+}
+
+.box4-header {
+    cursor: pointer;
+    background-color: #f1f1f1;
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.box4-header .toggle-text {
+    margin-right: 20px;
+    /* 為箭頭留出空間 */
+}
+
+.box4-header::after {
+    content: "▲";
+    /* 下箭頭 */
+    transition: transform 0.3s ease;
+}
+
+.box4.expanded .box4-header::after {
+    transform: rotate(180deg);
+    /* 展開時旋轉箭頭 */
+}
+
+.clear-btn{
+    text-align: right;
+}
+
+#left-arrow{
+
+}
+#right-arrow{
+
+}
+
+/* 詳細資料 */
+button{
+    background-color: #ddd;
+    border: transparent;
+    cursor: pointer;
+    border-radius: 5px;
+}
+button:hover{
+    background-color: #ccc;
+}
+.delete-restaurant{
+    position: absolute;
+    top: 5px; /* 距離上方 10px */
+    right: 10px; /* 距離右方 10px */
+    height: 20px;
+    background-color: #e98b8b;
+    text-align: center; /* 讓內容居中 */
+    cursor: pointer; /* 滑鼠指標變為手型 */
+    font-size: 14px; /* 調整文字大小 */
+    line-height: 20px; /* 垂直居中 */
+}
+.delete-restaurant:hover{
+    background-color: #D37676;
+}
+
+.upperBlock{
+    display: flex;
+}
+.drag-name{
+    text-align: start;
+}
+h4{
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: 10px;
+}
+.drag-star {
+    display: flex; /* 讓星星橫向排列 */
+}
+.drag-star svg {
+    padding-top: 10px;
+    margin-right: 5px; /* 控制星星之間的間距 */
+}
+.drag-parking{
+    margin-top: 8px;
+}
+
+h5{
+    margin: 3px;
+}
+
+/* 父容器 */
+.drag-vibe-tag, .drag-food-tag {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; 
+    margin-bottom: 10px;
+    margin-left: 0px;
+    cursor: default;
+    max-height: 25px; /* 控制單行高度，假設每個標籤高度為40px */
+    overflow: hidden;  /* 超過高度的部分不顯示 */
+  }
+  
+  .drag-restaurant-tag {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 5px;
+    background-color: #ddd;
+    border-radius: 5px;
+    font-size: 0.8em;
+    white-space: nowrap; /* 防止文本換行 */
+  }
+  
+/* .drag-vibe-tag{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; 
+    margin-bottom: 10px;
+    margin-left: 0px;
+    cursor: default;
+}
+.drag-food-tag{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; 
+    margin-bottom: 10px;
+    margin-left: 0px;
+    cursor: default;
+}
+.drag-restaurant-tag{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 5px;
+    background-color: #ddd;
+    border-radius: 5px;
+    font-size: 0.8em;
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    cursor: default;
+} */
+
+/* 比較button */
+#compare-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 40px; /* 定位到畫面最右邊 */
+    opacity: 0.5; /* 預設為不可點狀態 */
+    cursor: not-allowed; /* 指針顯示為不可用 */
+    transition: opacity 0.3s ease; /* 點擊時的過渡效果 */
+}
+
+#compare-btn:enabled {
+    cursor: pointer; /* 當按鈕可點擊時，顯示正常指針 */
+}
+
+/* 圖片設定 */
+/* 圖片容器設置為 relative 以便讓左右箭頭絕對定位 */
+.drag-image-container {
+    position: relative;
+    width: 320px;
+    height: 200px;
+    padding: 5px 0 5px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.drag-image{
+    border-radius: 15px;
+}
+
+/* 左右箭頭設置為絕對定位 */
+.drag-image-left-arrow, .drag-image-right-arrow {
+    position: absolute;
+    background-color: transparent;
+    font-size: 20px;
+    color: white;
+    text-shadow: 0px 0px 5px black;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    top: 50%; /* 垂直居中 */
+    transform: translateY(-50%); /* 修正垂直居中 */
+    z-index: 1; /* 確保箭頭位於圖片上方 */
+}
+
+/* 左箭頭定位在圖片左側 */
+.drag-image-left-arrow {
+    left: 0;
+    transition: background-color 500ms ease, opacity 500ms ease; /* 定義過渡時間為500毫秒 */
+}
+
+/* 右箭頭定位在圖片右側 */
+.drag-image-right-arrow {
+    right: 0;
+    transition: background-color 500ms ease, opacity 500ms ease; /* 定義過渡時間為500毫秒 */
+}
+
+.drag-image-left-arrow:hover {
+    background-color: #000;
+    opacity: 0.5;
+}
+
+/* 右箭頭定位在圖片右側 */
+.drag-image-right-arrow:hover {
+    background-color: #000;
+    opacity: 0.5;
+}
+/* end of 圖片 */
+
+/* 營業時間容器，對齊圖片中的營業時間 */
+.drag-opening-hours {
+    display: flex;
+    justify-content: space-between; /* 使各天的圓圈均勻分布 */
+    margin: 0 0 5px 0;
+    width: 90%; /* 確保容器寬度與圖片一致 */
+    padding: 0 15px; /* 為圓圈兩側添加一些內距 */
+}
+
+/* 每一天的營業時間圓圈 */
+.drag-day {
+    width: 25px; /* 調整圓圈大小 */
+    height: 25px;
+    text-align: center;
+    line-height: 25px; /* 使文字在圓圈內居中 */
+    margin: 0 3px; /* 控制圓圈之間的間距 */
+    border-radius: 50%; /* 使元素呈現圓形 */
+    background-color: #ddd; /* 預設為關店色 */
+    font-size: 12px; /* 調整文字大小 */
+    font-weight: bold; /* 增加文字的粗細 */
+}
+
+/* 營業時間開放的顏色 */
+.drag-day.open {
+    background-color: #F4DEB3; /* 營業時的顏色 */
+}
+
+.price-diningTime{
+    /* position: relative; */
+    align-items: center; /*垂直方向居中*/
+    display: flex;
+}
+.drag-price{
+    margin-left: 10px;
+    text-align: center;
+}
+.drag-dingingTime{
+    align-items: center; /* 垂直居中 */
+}
+
+/* 評分 */
+.rating-bar-container {
+    display: flex;
+    /* top: 5px; */
+  }
+  .bar {
+    fill-opacity: 0.7;
+  }
+  
+  /* end of 評分 */

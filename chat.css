@@ -1,0 +1,63 @@
+.comment-section {
+    max-height: 200px; /* 根據需要調整高度 */
+    overflow-y: auto; /* 啟用垂直滾動條 */
+    border: 1px solid #ddd; /* 可選: 添加邊框 */
+    padding: 10px; /* 可選: 添加內邊距 */
+    margin-bottom: 20px; /* 可選: 添加底部間距 */
+}
+
+.comment {
+    margin-bottom: 15px; /* 使評論之間有間隔 */
+}
+
+.comment:last-child {
+    border-bottom: none;
+}
+
+/* 評論標題的樣式 */
+.comment h4 {
+    margin: 0;
+    font-size: 1em; /* 根據需要調整字體大小 */
+    color: #333; /* 可選: 調整顏色 */
+}
+
+/* 評論文本的樣式 */
+.comment p {
+    margin: 0;
+    font-size: 0.9em; /* 根據需要調整字體大小 */
+    color: #555; /* 可選: 調整顏色 */
+}
+
+.comment small {
+    color: #888;
+    font-size: 0.9em;
+}
+
+.comment-form {
+    max-width: 600px;
+    margin: 20px auto;
+}
+
+.comment-form input,
+.comment-form textarea {
+    width: -webkit-fill-available;
+    padding: 10px;
+    margin: 5px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.comment-form button {
+    padding: 5px 8px;
+    margin-top: .5rem;
+    font-size: .8rem;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.comment-form button:hover {
+    background-color: #45a049;
+}
